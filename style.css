@@ -148,3 +148,27 @@ footer {
     color: #fefefe;
     margin-top: auto;
 }
+
+
+
+/* Message envoyé par l'utilisateur */
+.own-message {
+    background-color: #0066CC;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    max-width: 80%;
+    align-self: flex-end;
+}
+
+/* Message des autres utilisateurs */
+.other-message {
+    background-color: #444;
+    color: #fff;
+    padding: 0.5rem;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+    max-width: 80%;
+    align-self: flex-start;
+}
