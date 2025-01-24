@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const messagesContainer = document.getElementById('messages-container');
     const userList = document.getElementById('user-list');
-    
+
     // Liste des utilisateurs (simulation)
     let users = ['Utilisateur 1', 'Utilisateur 2', 'Utilisateur 3'];
 
@@ -23,34 +23,35 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.classList.add(isOwnMessage ? 'own-message' : 'other-message');
         messageDiv.textContent = content;
 
-        // Animation d'apparition du message
-        messageDiv.style.opacity = '0';
+        // Ajout du message avant animation
         messagesContainer.appendChild(messageDiv);
+
         setTimeout(() => {
             messageDiv.style.transition = 'opacity 0.5s';
             messageDiv.style.opacity = '1';
-        }, 10);
-
-        // Défilement automatique vers le bas
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }, 100);
     }
 
-    // Envoi d'un message
+    // Envoi d'un message avec vérification
     function sendMessage() {
         const message = messageInput.value.trim();
-        
-        if (message === '') {
-            return; // Ne rien faire si le champ est vide
+
+        if (message === '' || message.length < 3) {
+            alert("Veuillez saisir un message d'au moins 3 caractères.");
+            return;
         }
 
-        // Ajoute le message à la zone des messages
+        sendButton.disabled = true;
         addMessage(message, true);
-        
-        // Efface l'input
         messageInput.value = '';
+
+        setTimeout(() => {
+            sendButton.disabled = false;
+        }, 1000);
     }
 
-    // Ajout d'un utilisateur (pour tester)
+    // Ajout d'un utilisateur
     function addUser(username) {
         if (!users.includes(username)) {
             users.push(username);
@@ -59,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Suppression d'un utilisateur (pour tester)
+    // Suppression d'un utilisateur
     function removeUser(username) {
         const index = users.indexOf(username);
         if (index !== -1) {
@@ -90,4 +91,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialisation de la liste des utilisateurs
     updateUserList();
+});
+
+document.getElementById("messageForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); // Empêche le rechargement de la page
+
+    const nom = document.getElementById("nom").value.trim();
+    const prenom = document.getElementById("prenom").value.trim();
+
+    if (!nom || !prenom) {
+        alert("Veuillez remplir tous les champs !");
+        return;
+    }
+
+    try {
+        const sendButton = document.querySelector("#messageForm button");
+        sendButton.textContent = "Envoi...";
+        sendButton.disabled = true;
+
+        const response = await fetch("http://localhost:20000/AddMedecin", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                nom: nom,
+                prenom: prenom
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error("Erreur lors de l'envoi du message.");
+        }
+
+        const result = await response.text();
+        alert(result);
+        document.getElementById("messageForm").reset();
+    } catch (error) {
+        console.error("Erreur réseau :", error);
+        alert("Impossible de contacter le serveur. Vérifiez votre connexion.");
+    } finally {
+        sendButton.textContent = "Envoyer";
+        sendButton.disabled = false;
+    }
 });
