@@ -15,10 +15,10 @@ app.listen(port, () => {
 });
 
 const bddConnection = mysql.createConnection({
-    host: process.env.DB_HOST || "192.168.65.113",
-    database: process.env.DB_NAME || "TD3",
-    user: process.env.DB_USER || "site1",
-    password: process.env.DB_PASS || "site1"
+    host: process.env.DB_HOST ,
+    database: process.env.DB_NAME ,
+    user: process.env.DB_USER ,
+    password: process.env.DB_PASS 
 });
 
 bddConnection.connect(err => {
