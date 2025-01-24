@@ -1,53 +1,64 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
+require('dotenv').config();
+
 const app = express();
 
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
-const port = process.env.PORT || 8080;
+const port = 20000;
 
 app.listen(port, () => {
-    console.log('Serveur démarré sur le port : ' + port);
+    console.log(`Mon serveur est démarré sur le port ${port}`);
 });
 
-// Connexion à la base de données
 const bddConnection = mysql.createConnection({
-    host: "192.168.64.182", // IP du serveur MariaDB
-    database: "Projet-msg", // Nom de la base
-    user: "site1", // Utilisateur avec privilèges
-    password: "site1" // Mot de passe de l'utilisateur
+    host: process.env.DB_HOST || "192.168.65.113",
+    database: process.env.DB_NAME || "TD3",
+    user: process.env.DB_USER || "site1",
+    password: process.env.DB_PASS || "site1"
 });
 
-bddConnection.connect((err) => {
-    if (err) throw err;
-    console.log("Connecté à la base de données !");
+bddConnection.connect(err => {
+    if (err) {
+        console.error('Erreur de connexion à la base de données:', err.message);
+        return;
+    }
+    console.log("Connexion réussie à la base de données");
 });
 
-// Route pour récupérer la liste des médecins
 app.get('/Route1', (req, res) => {
     bddConnection.query("SELECT * FROM Medecin", (err, results) => {
         if (err) {
             return res.status(500).send({ error: err.message });
         }
-        res.json(results); // Renvoie automatiquement en JSON
+        res.json(results);
     });
 });
 
-// Route pour ajouter un médecin
 app.post('/AddMedecin', (req, res) => {
-    const { nom, prenom } = req.body;
-
-    if (!nom || !prenom) {
-        return res.status(400).send({ error: "Les champs 'nom' et 'prenom' sont requis." });
+    if (!req.body.nom || !req.body.prenom) {
+        return res.status(400).send({ error: "Nom et prénom sont requis" });
     }
 
     const query = `INSERT INTO Medecin (nom, prenom) VALUES (?, ?)`;
-    bddConnection.query(query, [nom, prenom], (err) => {
+    bddConnection.query(query, [req.body.nom, req.body.prenom], (err, result) => {
         if (err) {
             return res.status(500).send({ error: err.message });
         }
-        res.send({ message: "Médecin ajouté avec succès." });
+        res.send("Data inserted successfully");
+    });
+});
+
+process.on('SIGINT', () => {
+    bddConnection.end(err => {
+        if (err) {
+            console.error('Erreur lors de la fermeture de la connexion :', err.message);
+        } else {
+            console.log('Connexion à la base de données fermée.');
+        }
+        process.exit();
     });
 });
