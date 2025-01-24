@@ -17,9 +17,20 @@ header {
 }
 
 header h1 {
-    margin: 0;
-    color: #fff;
+    font-size: 3rem;
+    font-weight: bold;
+    background: linear-gradient(90deg, red, orange, yellow, green, blue,green, yellow, orange, red);
+    background-size: 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientAnimation 5s infinite linear;
 }
+
+@keyframes gradientAnimation {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
 
 /* Conteneur principal */
 #app-container {
