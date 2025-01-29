@@ -37,8 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function sendMessage() {
         const message = messageInput.value.trim();
 
-        if (message === '' || message.length < 3) {
-            alert("Veuillez saisir un message d'au moins 3 caractères.");
+        if (message === '' || message.length < 2) {
+            alert("Veuillez saisir un message d'au moins 2 caractères.");
             return;
         }
 
