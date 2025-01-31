@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return response.json();
     })
     .then(data => {
-        const messagesContainer = document.getElementById("messages"); // Zone où afficher les messages
+        const messagesContainer = document.getElementById("chat-container"); // Zone où afficher les messages
         messagesContainer.innerHTML = ""; // On vide la zone avant d'ajouter les nouveaux messages
         
         data.forEach(msg => {
