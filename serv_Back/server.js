@@ -64,12 +64,12 @@ app.post('/api/messages', (req, res) => {
 });
 
 // ➤ 4️⃣ Récupérer tous les messages
-app.get('/api/messages', (req, res) => {
+app.get('/api/recuperation', (req, res) => {
     const query = `
         SELECT message.id, message.contenu, message.date, message.heure, 
-               utilisateurs.nom, utilisateurs.prenom 
+               utilisateur.nom, utilisateur.prenom 
         FROM message 
-        JOIN utilisateurs ON message.idutilisateur = utilisateurs.idutilisateur
+        JOIN utilisateur ON message.idutilisateur = utilisateur.idutilisateur
         ORDER BY message.date DESC, message.heure DESC
     `;
 

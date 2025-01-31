@@ -9,17 +9,40 @@ document.addEventListener('DOMContentLoaded', () => {
     // Récupérer les utilisateurs depuis l'API
     async function fetchUsers() {
         try {
-            const response = await fetch("192.168.65.113:20000/api/getUsers");
+            const response = await fetch("http://192.168.65.113:20000/api/getUsers"); // Ajout de "http://"
             if (!response.ok) throw new Error("Erreur lors de la récupération des utilisateurs.");
             const data = await response.json();
-            users = data.users; // Supposons que la réponse contient un tableau d'utilisateurs
+            users = data.users; 
             updateUserList();
         } catch (error) {
             console.error("Erreur réseau :", error);
         }
     }
 
-    // Affichage des utilisateurs
+    // Récupérer les messages depuis l'API
+    fetch("http://192.168.65.113:20000/api/recuperation")
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Erreur lors de la récupération des messages.");
+        }
+        return response.json();
+    })
+    .then(data => {
+        const messagesContainer = document.getElementById("messages"); // Zone où afficher les messages
+        messagesContainer.innerHTML = ""; // On vide la zone avant d'ajouter les nouveaux messages
+        
+        data.forEach(msg => {
+            const messageElement = document.createElement("div");
+            messageElement.classList.add("message"); // Ajout d'une classe CSS pour le style
+            messageElement.innerHTML = `<strong>${msg.nom} ${msg.prenom}:</strong> ${msg.contenu} <span class="time">${msg.heure}</span>`;
+            messagesContainer.appendChild(messageElement);
+        });
+    })
+    .catch(error => {
+        console.error("Erreur :", error);
+    });
+
+
     function updateUserList() {
         userList.innerHTML = '';
         users.forEach(user => {
@@ -29,13 +52,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Ajout d'un message dans la zone des messages
     function addMessage(content, isOwnMessage = false) {
         const messageDiv = document.createElement('div');
         messageDiv.classList.add(isOwnMessage ? 'own-message' : 'other-message');
         messageDiv.textContent = content;
-
-        // Ajout du message avant animation
         messagesContainer.appendChild(messageDiv);
 
         setTimeout(() => {
@@ -45,38 +65,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 
-    function envoyerUnTruc() {
-        const valeurNom = document.getElementById("message-input").value.trim(); 
-      
-        // Vérifier que les champs ne sont pas vides
-        if (!valeurNom || !valeurPrenom) {
-          alert("Veuillez entrer le nom et le prénom !");
-          return;
+    // Correction de la fonction Message()
+    function Message() {
+        const message = messageInput.value.trim(); 
+
+        if (!message) {
+            alert("Veuillez entrer un message !");
+            return;
         }
-    fetch("http://192.168.65.113:20000/api/messages", {
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        method: "POST",
-        body: JSON.stringify({ "Message": message,}) // Inclure nom et prénom
-      })
+
+        fetch("http://192.168.65.113:20000/api/messages", {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            method: "POST",
+            body: JSON.stringify({ "Message": message })
+        })
         .then(response => {
-          if (response.ok) {
-            console.log("Message ajouté :", message,);
-            alert("Message ajouté avec succès !");
-            chargerListeMedecins(); // Recharger la liste après ajout
-          } else {
-            throw new Error("Erreur lors de l'ajout du message.");
-          }
+            if (response.ok) {
+                console.log("Message ajouté :", message);
+                alert("Message ajouté avec succès !");
+                fetchMessages(); // Correction : recharger les messages
+            } else {
+                throw new Error("Erreur lors de l'ajout du message.");
+            }
         })
         .catch(error => {
-          console.error('Une erreur est survenue :', error);
-          alert("Une erreur est survenue. Veuillez réessayer.");
+            console.error('Une erreur est survenue :', error);
+            alert("Une erreur est survenue. Veuillez réessayer.");
         });
     }
 
-    // Envoi d'un message avec vérification
     async function sendMessage() {
         const message = messageInput.value.trim();
 
@@ -89,21 +109,20 @@ document.addEventListener('DOMContentLoaded', () => {
         addMessage(message, true);
         messageInput.value = '';
 
-        // Ajouter le message dans la base de données
         try {
-            const response = await fetch("http://localhost:20000/api/messages", {
+            const response = await fetch("http://192.168.65.113:20000/api/messages", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
                     contenu: message,
-                    idutilisateur: 1  // Id de l'utilisateur actuel (ajuste cette partie)
+                    idutilisateur: 1
                 })
             });
 
             if (response.ok) {
-                fetchMessages();  // Récupérer les messages après envoi
+                fetchMessages();  // Correction : Appel à la fonction définie ci-dessus
             } else {
                 alert("Erreur lors de l'envoi du message.");
             }
@@ -114,11 +133,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Ajouter un utilisateur via l'API
     async function addUser(username) {
         if (!users.includes(username)) {
             try {
-                const response = await fetch("http://localhost:20000/api/AddUser", {
+                const response = await fetch("http://192.168.65.113:20000/api/AddUser", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -128,7 +146,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!response.ok) throw new Error("Erreur lors de l'ajout de l'utilisateur.");
 
-                // Ajouter l'utilisateur localement après ajout réussi
                 users.push(username);
                 updateUserList();
                 addMessage(`${username} a rejoint le chat.`, false);
@@ -138,22 +155,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Écouteur sur le bouton d'envoi
     sendButton.addEventListener('click', sendMessage);
 
-    // Écouteur sur la touche "Enter" pour envoyer un message
     messageInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             sendMessage();
         }
     });
 
-    // Initialisation de la liste des utilisateurs
     fetchUsers();
+    fetchMessages(); // Charger les messages au démarrage
 
-    // Gestion de l'ajout d'un utilisateur (exemple avec un formulaire)
     document.getElementById("messageForm").addEventListener("submit", async (e) => {
-        e.preventDefault(); // Empêche le rechargement de la page
+        e.preventDefault();
 
         const nom = document.getElementById("nom").value.trim();
         const prenom = document.getElementById("prenom").value.trim();
@@ -168,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
             sendButton.textContent = "Envoi...";
             sendButton.disabled = true;
 
-            const response = await fetch("http://localhost:20000/api/utilisateurs", {
+            const response = await fetch("http://192.168.65.113:20000/api/utilisateurs", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
