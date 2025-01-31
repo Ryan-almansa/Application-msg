@@ -28,12 +28,21 @@ bddConnection.connect(err => {
 // ====================== Routes API """"""""""""""""======================
 
 // ➤ 1️⃣ Ajouter un utilisateur
-app.post("/api/utilisateurs", (req, res) => {
+app.post('/api/utilisateurs', (req, res) => {
     const { nom, prenom } = req.body;
-    if (!nom || !prenom) return res.status(400).json({ error: "Champs manquants" });
 
-    users.push({ nom, prenom });
-    res.json({ success: true, message: "Utilisateur ajouté" });
+    if (!nom || !prenom) {
+        return res.status(400).json({ error: "Nom et prénom sont requis." });
+    }
+
+    const query = `INSERT INTO Utilisateur (nom, prenom) VALUES (?, ?)`;
+
+    db.query(query, [nom, prenom], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ message: "Utilisateur ajouté avec succès", id: result.insertId });
+    });
 });
 
 
