@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Récupérer les utilisateurs depuis l'API
     async function fetchUsers() {
         try {
-            const response = await fetch("http://192.168.65.113:20000/api/getUsers"); // Ajout de "http://"
+            const response = await fetch("http://192.168.65.113:20000/api/getUsers");
             if (!response.ok) throw new Error("Erreur lors de la récupération des utilisateurs.");
             const data = await response.json();
             users = data.users; 
@@ -28,12 +28,12 @@ document.addEventListener('DOMContentLoaded', () => {
         return response.json();
     })
     .then(data => {
-        const messagesContainer = document.getElementById("chat-container"); // Zone où afficher les messages
-        messagesContainer.innerHTML = ""; // On vide la zone avant d'ajouter les nouveaux messages
+        const messagesContainer = document.getElementById("chat-container"); 
+        messagesContainer.innerHTML = ""; 
         
         data.forEach(msg => {
             const messageElement = document.createElement("div");
-            messageElement.classList.add("message"); // Ajout d'une classe CSS pour le style
+            messageElement.classList.add("message");
             messageElement.innerHTML = `<strong>${msg.nom} ${msg.prenom}:</strong> ${msg.contenu} <span class="time">${msg.heure}</span>`;
             messagesContainer.appendChild(messageElement);
         });
@@ -41,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
     .catch(error => {
         console.error("Erreur :", error);
     });
-
 
     function updateUserList() {
         userList.innerHTML = '';
@@ -86,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok) {
                 console.log("Message ajouté :", message);
                 alert("Message ajouté avec succès !");
-                fetchMessages(); // Correction : recharger les messages
+                fetchMessages(); 
             } else {
                 throw new Error("Erreur lors de l'ajout du message.");
             }
@@ -96,6 +95,16 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Une erreur est survenue. Veuillez réessayer.");
         });
     }
+
+    // Fonction pour recharger la page toutes les 5 secondes
+    function autoReloadPage() {
+        setTimeout(() => {
+            location.reload();
+        }, 5000); 
+    }
+
+    // Démarre la boucle de rechargement au chargement de la page
+    autoReloadPage(); 
 
     async function sendMessage() {
         const message = messageInput.value.trim();
@@ -122,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (response.ok) {
-                fetchMessages();  // Correction : Appel à la fonction définie ci-dessus
+                fetchMessages();  
             } else {
                 alert("Erreur lors de l'envoi du message.");
             }
@@ -164,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     fetchUsers();
-    fetchMessages(); // Charger les messages au démarrage
+    fetchMessages(); 
 
     document.getElementById("messageForm").addEventListener("submit", async (e) => {
         e.preventDefault();
