@@ -97,11 +97,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Fonction pour recharger la page toutes les 5 secondes
-    function autoReloadPage() {
-        setTimeout(() => {
-            location.reload();
-        }, 5000); 
+    function autoReloadMainContainer() {
+        setInterval(() => {
+            // Par exemple, on pourrait changer le contenu de la div
+            document.getElementById('main-container').innerHTML = 'Contenu mis à jour à ' + new Date().toLocaleTimeString();
+        }, 5000);
     }
+    
 
     // Démarre la boucle de rechargement au chargement de la page
     autoReloadPage(); 
