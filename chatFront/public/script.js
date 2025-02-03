@@ -96,18 +96,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    
-    function reloadChatContainer() {
+    function reloadDiv() {
         setInterval(() => {
-            let chatContainer = document.getElementById('chat-container');
-    
-            // Simule une mise à jour (à remplacer par un fetch pour charger depuis un serveur)
-            chatContainer.innerHTML = `<p>Dernière mise à jour : ${new Date().toLocaleTimeString()}</p>`;
-            
-        }, 5000);
+            let chatContainer = document.querySelector('#chat-container.chat-box');
+            if (chatContainer) {
+                // Efface le contenu actuel et remet à jour (tu peux ici ajouter du contenu dynamique)
+                chatContainer.innerHTML = 'Le contenu a été mis à jour à ' + new Date().toLocaleTimeString();
+            }
+        }, 5000); // Toutes les 5 secondes
     }
-  
+    
+    window.onload = reloadDiv;
+    
 
+
+    
 
     async function sendMessage() {
         const message = messageInput.value.trim();
