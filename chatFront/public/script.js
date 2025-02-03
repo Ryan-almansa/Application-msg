@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch("http://192.168.65.113:20000/api/getUsers");
             if (!response.ok) throw new Error("Erreur lors de la récupération des utilisateurs.");
             const data = await response.json();
-            users = data.users; 
+            users = data.users;
             updateUserList();
         } catch (error) {
             console.error("Erreur réseau :", error);
@@ -20,27 +20,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Récupérer les messages depuis l'API
-    fetch("http://192.168.65.113:20000/api/recuperation")
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Erreur lors de la récupération des messages.");
-        }
-        return response.json();
-    })
-    .then(data => {
-        const messagesContainer = document.getElementById("chat-container"); 
-        messagesContainer.innerHTML = ""; 
-        
-        data.forEach(msg => {
-            const messageElement = document.createElement("div");
-            messageElement.classList.add("message");
-            messageElement.innerHTML = `<strong>${msg.nom} ${msg.prenom}:</strong> ${msg.contenu} <span class="time">${msg.heure}</span>`;
-            messagesContainer.appendChild(messageElement);
+    function fetchMessages() {
+        fetch("http://192.168.65.113:20000/api/recuperation")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Erreur lors de la récupération des messages.");
+            }
+            return response.json();
+        })
+        .then(data => {
+            messagesContainer.innerHTML = "";
+            data.forEach(msg => {
+                const messageElement = document.createElement("div");
+                messageElement.classList.add("message");
+                messageElement.innerHTML = `<strong>${msg.nom} ${msg.prenom}:</strong> ${msg.contenu} <span class="time">${msg.heure}</span>`;
+                messagesContainer.appendChild(messageElement);
+            });
+        })
+        .catch(error => {
+            console.error("Erreur :", error);
         });
-    })
-    .catch(error => {
-        console.error("Erreur :", error);
-    });
+    }
 
     function updateUserList() {
         userList.innerHTML = '';
@@ -64,54 +64,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 100);
     }
 
-    // Correction de la fonction Message()
-    function Message() {
-        const message = messageInput.value.trim(); 
-
-        if (!message) {
-            alert("Veuillez entrer un message !");
-            return;
-        }
-
-        fetch("http://192.168.65.113:20000/api/messages", {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            method: "POST",
-            body: JSON.stringify({ "Message": message })
-        })
-        .then(response => {
-            if (response.ok) {
-                console.log("Message ajouté :", message);
-                alert("Message ajouté avec succès !");
-                fetchMessages(); 
-            } else {
-                throw new Error("Erreur lors de l'ajout du message.");
-            }
-        })
-        .catch(error => {
-            console.error('Une erreur est survenue :', error);
-            alert("Une erreur est survenue. Veuillez réessayer.");
-        });
+    // Fonction qui actualise la page toutes les secondes
+    function refreshPageContent() {
+        fetchMessages();  // Rafraîchit les messages
+        fetchUsers();     // Rafraîchit la liste des utilisateurs
     }
 
-    function reloadDiv() {
-        setInterval(() => {
-            let chatContainer = document.querySelector('#chat-container.chat-box');
-            if (chatContainer) {
-                // Efface le contenu actuel et remet à jour (tu peux ici ajouter du contenu dynamique)
-                chatContainer.innerHTML = 'Le contenu a été mis à jour à ' + new Date().toLocaleTimeString();
-            }
-        }, 5000); // Toutes les 5 secondes
-    }
-    
-    window.onload = reloadDiv;
-    
+    // Actualisation automatique toutes les 1000 ms (1 seconde)
+    setInterval(refreshPageContent, 1000);
 
-
-    
-
+    // Fonction pour envoyer un message
     async function sendMessage() {
         const message = messageInput.value.trim();
 
@@ -179,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     fetchUsers();
-    fetchMessages(); 
+    fetchMessages();
 
     document.getElementById("messageForm").addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -224,3 +186,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+
+
