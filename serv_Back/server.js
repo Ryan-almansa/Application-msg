@@ -98,5 +98,5 @@ process.on('SIGINT', () => {
 // ====================== Lancement du serveur ======================
 
 app.listen(port, () => {
-    console.log(`🚀 Serveur démarré sur http://localhost:${port}`);
+    console.log(`🚀 Serveur démarré sur http://192.168.65.113:${port}`);
 });
