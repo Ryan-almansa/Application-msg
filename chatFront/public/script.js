@@ -96,17 +96,18 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Fonction pour recharger la page toutes les 5 secondes
-    function autoReloadMainContainer() {
+    
+    function reloadChatContainer() {
         setInterval(() => {
-            // Par exemple, on pourrait changer le contenu de la div
-            document.getElementById('main-container').innerHTML = 'Contenu mis à jour à ' + new Date().toLocaleTimeString();
+            let chatContainer = document.getElementById('chat-container');
+    
+            // Simule une mise à jour (à remplacer par un fetch pour charger depuis un serveur)
+            chatContainer.innerHTML = `<p>Dernière mise à jour : ${new Date().toLocaleTimeString()}</p>`;
+            
         }, 5000);
     }
-    
+  
 
-    // Démarre la boucle de rechargement au chargement de la page
-    autoReloadPage(); 
 
     async function sendMessage() {
         const message = messageInput.value.trim();
