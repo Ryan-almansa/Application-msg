@@ -3,13 +3,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const sendButton = document.getElementById('send-button');
     const messagesContainer = document.getElementById('messages-container');
     const userList = document.getElementById('user-list');
+    const creerBtn = document.getElementById("creer");
+    const connexionBtn = document.getElementById("connexion");
 
     let users = []; // Liste des utilisateurs initialement vide
 
     // Récupérer les utilisateurs depuis l'API
     async function fetchUsers() {
         try {
-            const response = await fetch("http://192.168.65.113:20000/api/getUsers");
+            const response = await fetch("http://192.168.65.113:20000/api/getutilisateur");
             if (!response.ok) throw new Error("Erreur lors de la récupération des utilisateurs.");
             const data = await response.json();
             users = data.users;
@@ -87,6 +89,14 @@ document.addEventListener('DOMContentLoaded', () => {
         messageInput.value = '';
 
         try {
+
+            const userId = localStorage.getItem("userId"); // Récupérer l'ID stocké
+
+            if (!userId) {
+                alert("Utilisateur non connecté.");
+                return;
+            }
+
             const response = await fetch("http://192.168.65.113:20000/api/messages", {
                 method: "POST",
                 headers: {
@@ -94,7 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({
                     contenu: message,
-                    idutilisateur: 1
+                    idutilisateur: userId
                 })
             });
 
@@ -113,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function addUser(username) {
         if (!users.includes(username)) {
             try {
-                const response = await fetch("http://192.168.65.113:20000/api/AddUser", {
+                const response = await fetch("http://192.168.65.113:20000/api/addutilisateur", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -143,46 +153,74 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchUsers();
     fetchMessages();
 
-    document.getElementById("messageForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
+
+    creerBtn.addEventListener("click", async (event) => {
+        event.preventDefault(); // Empêcher le rechargement de la page
 
         const nom = document.getElementById("nom").value.trim();
         const prenom = document.getElementById("prenom").value.trim();
 
         if (!nom || !prenom) {
-            alert("Veuillez remplir tous les champs !");
+            alert("Veuillez remplir tous les champs.");
             return;
         }
 
         try {
-            const sendButton = document.querySelector("#messageForm button");
-            sendButton.textContent = "Envoi...";
-            sendButton.disabled = true;
-
-            const response = await fetch("http://192.168.65.113:20000/api/utilisateurs", {
+            const response = await fetch("http://192.168.65.113:20000/api/addutilisateur", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    nom: nom,
-                    prenom: prenom
-                })
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nom, prenom })
             });
 
-            if (!response.ok) {
-                throw new Error("Erreur lors de l'envoi du message.");
-            }
+            const data = await response.json();
 
-            const result = await response.text();
-            alert(result);
-            document.getElementById("messageForm").reset();
+            if (response.ok) {
+                alert(data.message); // Affiche un message de succès
+            } else {
+                alert("Erreur: " + data.error);
+            }
         } catch (error) {
-            console.error("Erreur réseau :", error);
-            alert("Impossible de contacter le serveur. Vérifiez votre connexion.");
-        } finally {
-            sendButton.textContent = "Envoyer";
-            sendButton.disabled = false;
+            console.error("Erreur lors de l'ajout:", error);
+        }
+    });
+
+    connexionBtn.addEventListener("click", async (event) => {
+        event.preventDefault(); // Empêche le rechargement de la page
+    
+        const nomSaisi = document.getElementById("nom").value.trim();
+        const prenomSaisi = document.getElementById("prenom").value.trim();
+    
+        if (!nomSaisi || !prenomSaisi) {
+            alert("Veuillez saisir votre nom et prénom.");
+            return;
+        }
+    
+        try {
+            const response = await fetch("http://192.168.65.113:20000/api/getutilisateur");
+            const data = await response.json();
+    
+            if (response.ok) {
+                console.log("Données reçues :", data); // Vérifie la structure des données
+    
+                // Trouver l'utilisateur correspondant
+                const utilisateur = data.users.find(user => 
+                    user.nom.toLowerCase() === nomSaisi.toLowerCase() &&
+                    user.prenom.toLowerCase() === prenomSaisi.toLowerCase()
+                );
+    
+                if (utilisateur) {
+                    // Stocker l'ID de l'utilisateur connecté
+                    localStorage.setItem("userId", utilisateur.idutilisateur);
+                    alert(`Connexion réussie : Bienvenue ${utilisateur.nom} ${utilisateur.prenom} ${utilisateur.idutilisateur} !`);
+                    console.log("Utilisateur connecté :", utilisateur);
+                } else {
+                    alert("Nom ou prénom incorrect.");
+                }
+            } else {
+                alert("Erreur: " + data.error);
+            }
+        } catch (error) {
+            console.error("Erreur lors de la récupération:", error);
         }
     });
 });

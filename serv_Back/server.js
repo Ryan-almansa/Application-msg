@@ -28,16 +28,16 @@ bddConnection.connect(err => {
 // ====================== Routes API """"""""""""""""======================
 
 // ➤ 1️⃣ Ajouter un utilisateur
-app.post('/api/utilisateurs', (req, res) => {
+app.post('/api/addutilisateur', (req, res) => {
     const { nom, prenom } = req.body;
 
     if (!nom || !prenom) {
         return res.status(400).json({ error: "Nom et prénom sont requis." });
     }
 
-    const query = `INSERT INTO Utilisateur (nom, prenom) VALUES (?, ?)`;
+    const query = `INSERT INTO utilisateur (nom, prenom) VALUES (?, ?)`;
 
-    db.query(query, [nom, prenom], (err, result) => {
+    bddConnection.query(query, [nom, prenom], (err, result) => {
         if (err) {
             return res.status(500).json({ error: err.message });
         }
@@ -47,18 +47,27 @@ app.post('/api/utilisateurs', (req, res) => {
 
 
 // ➤ 2️⃣ Récupérer la liste des utilisateurs
-app.get('/api/getUsers', (req, res) => {
-    bddConnection.query("SELECT * FROM utilisateurs", (err, results) => {
+app.get('/api/getutilisateur', (req, res) => {
+    bddConnection.query("SELECT * FROM utilisateur", (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
-        res.json({ users: results.map(user => `${user.nom} ${user.prenom}`) });
+
+        res.json({
+            users: results.map(user => ({
+                idutilisateur: user.idutilisateur, // ✅ Assure-toi que l'ID est inclus
+                nom: user.nom,
+                prenom: user.prenom
+            }))
+        });
     });
 });
+
+
 
 // ➤ 3️⃣ Ajouter un message
 app.post('/api/messages', (req, res) => {
     const { contenu, idutilisateur } = req.body;
     if (!contenu || !idutilisateur) {
-        return res.status(400).json({ error: "Contenu et idutilisateur sont requis" });
+        return res.status(400).json({ error: "Contenu et id utilisateur sont requis" });
     }
 
     const query = "INSERT INTO message (contenu, idutilisateur, date, heure) VALUES (?, ?, CURDATE(), CURTIME())";
