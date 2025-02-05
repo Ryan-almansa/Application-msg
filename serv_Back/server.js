@@ -53,7 +53,7 @@ app.get('/api/getutilisateur', (req, res) => {
 
         res.json({
             users: results.map(user => ({
-                idutilisateur: user.idutilisateur, // ✅ Assure-toi que l'ID est inclus
+                idutilisateur: user.idutilisateur, 
                 nom: user.nom,
                 prenom: user.prenom
             }))
