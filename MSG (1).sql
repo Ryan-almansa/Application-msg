@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Hôte : localhost
--- Généré le : jeu. 27 fév. 2025 à 15:13
+-- Généré le : lun. 03 fév. 2025 à 14:19
 -- Version du serveur : 10.5.23-MariaDB-0+deb11u1
 -- Version de PHP : 7.4.33
 
@@ -49,13 +49,6 @@ CREATE TABLE `message` (
   `idutilisateur` int(11) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Déchargement des données de la table `message`
---
-
-INSERT INTO `message` (`id`, `date`, `heure`, `contenu`, `idutilisateur`) VALUES
-(4041, '2025-02-27', '15:03:38', 'salut les filles', 1953);
-
 -- --------------------------------------------------------
 
 --
@@ -77,17 +70,15 @@ CREATE TABLE `Table_ping` (
 CREATE TABLE `utilisateur` (
   `idutilisateur` int(11) NOT NULL,
   `nom` varchar(25) NOT NULL,
-  `prenom` varchar(25) NOT NULL,
-  `Mdp` varchar(255) NOT NULL
+  `prenom` varchar(25) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Déchargement des données de la table `utilisateur`
 --
 
-INSERT INTO `utilisateur` (`idutilisateur`, `nom`, `prenom`, `Mdp`) VALUES
-(1, 'Almansa', 'Ryan', ''),
-(1953, 'Dume', 'sacha', '');
+INSERT INTO `utilisateur` (`idutilisateur`, `nom`, `prenom`) VALUES
+(1, 'utilisateur ', 'test');
 
 --
 -- Index pour les tables déchargées
@@ -137,7 +128,7 @@ ALTER TABLE `Chat`
 -- AUTO_INCREMENT pour la table `message`
 --
 ALTER TABLE `message`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4042;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=112;
 
 --
 -- AUTO_INCREMENT pour la table `Table_ping`
@@ -149,7 +140,7 @@ ALTER TABLE `Table_ping`
 -- AUTO_INCREMENT pour la table `utilisateur`
 --
 ALTER TABLE `utilisateur`
-  MODIFY `idutilisateur` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1954;
+  MODIFY `idutilisateur` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- Contraintes pour les tables déchargées
