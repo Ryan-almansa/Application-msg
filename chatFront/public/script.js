@@ -292,6 +292,7 @@ button.addEventListener('click', () => {
     // On génère une couleur aléatoire
     const randomColor = getRandomColor();
     document.body.style.backgroundColor = randomColor;
+    
 });
 
 // Fonction pour générer une couleur aléatoire
@@ -314,4 +315,23 @@ function toggleLED(state) {
     .then(data => console.log(data))
     .catch(error => console.error("Erreur:", error));
 }
+
+
+//commande 
+
+document.addEventListener("DOMContentLoaded", () => {
+    const container = document.getElementById("message-input");
+
+    // Crée le bouton dynamiquement (si nécessaire)
+    const button = document.createElement("button");
+    button.textContent = "Led-Vert";
+    document.body.appendChild(button);
+
+    button.addEventListener("click", () => {
+        container.textContent = "Bonjour, comment ça va ?";
+    });
+});
+
+
+
 
