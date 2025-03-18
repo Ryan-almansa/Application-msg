@@ -304,5 +304,14 @@ function getRandomColor() {
     return color;
 }
 
-
+function toggleLED(state) {
+    fetch("http://192.168.65.113:20000/api/led", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ state: state })
+    })
+    .then(response => response.json())
+    .then(data => console.log(data))
+    .catch(error => console.error("Erreur:", error));
+}
 
