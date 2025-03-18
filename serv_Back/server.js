@@ -1,10 +1,13 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
+const SerialPort = require('serialport');
+const Readline = require('@serialport/parser-readline');
 require('dotenv').config();
 
 const app = express();
 const port = 20000;
+const parser = port.pipe(new Readline({ delimiter: '\n' }));
 
 app.use(express.json());
 app.use(cors());
@@ -23,6 +26,30 @@ bddConnection.connect(err => {
     }
     console.log("✅ Connexion réussie à la base de données");
 });
+
+// ➤ 🔒 Route API pour allumer ou éteindre la LED
+app.post('/api/led', (req, res) => {
+    const { state } = req.body; // state = true (allumer) ou false (éteindre)
+
+    if (state === true) {
+        port.write("1\n"); // Envoie "1" à l'Arduino
+        res.json({ message: "LED allumée" });
+    } else if (state === false) {
+        port.write("0\n"); // Envoie "0" à l'Arduino
+        res.json({ message: "LED éteinte" });
+    } else {
+        res.status(400).json({ error: "État invalide, utilisez true ou false" });
+    }
+});
+
+// ➤ 🔒
+parser.on("data", (data) => {
+    console.log("Message reçu de l'Arduino:", data);
+});
+
+
+
+
 
 
 // ➤ 🔒 Limiter l'ajout d'un utilisateur
