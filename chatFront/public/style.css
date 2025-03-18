@@ -306,3 +306,14 @@ button:hover {
 button:focus {
     outline: none;
 }
+
+span.Rouge {
+    color: #f00;
+}
+span.Vert {
+    color: rgb(0, 255, 106);
+}
+
+span.Bleu {
+    color: rgb(25, 0, 255);
+}
