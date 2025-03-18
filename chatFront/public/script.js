@@ -292,7 +292,7 @@ button.addEventListener('click', () => {
     // On génère une couleur aléatoire
     const randomColor = getRandomColor();
     document.body.style.backgroundColor = randomColor;
-    
+
 });
 
 // Fonction pour générer une couleur aléatoire
@@ -308,19 +308,21 @@ function getRandomColor() {
 
 //commande 
 
-document.addEventListener("DOMContentLoaded", () => {
-    const container = document.getElementById("message-input");
+document.getElementById('send-message').addEventListener('click', () => {
+    const message = 'La led est allumé';
+    const chatContainer = document.getElementById('input-container');
+    const messageElement = document.createElement('div');
+    messageElement.textContent = message;
+    messageElement.style.padding = '8px';
+    messageElement.style.margin = '4px 0';
+    messageElement.style.backgroundColor = 'transparent'; // Fond transparent
+    messageElement.style.borderRadius = '5px';
+    messageElement.style.color = '#fff'; // Texte noir (modifiable)
+    chatContainer.appendChild(messageElement);
 
-    // Crée le bouton dynamiquement (si nécessaire)
-    const button = document.createElement("button");
-    button.textContent = "Led-Vert";
-    document.body.appendChild(button);
+    // Supprime le message après 5 secondes
+    setTimeout(() => {
+        chatContainer.removeChild(messageElement);
+    }, 5000);
 
-    button.addEventListener("click", () => {
-        container.textContent = "Bonjour, comment ça va ?";
-    });
 });
-
-
-
-

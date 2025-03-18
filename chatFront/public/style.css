@@ -317,3 +317,10 @@ span.Vert {
 span.Bleu {
     color: rgb(25, 0, 255);
 }
+
+element.style {
+    padding: 8px;
+    margin: 4px 0px;
+    /* background-color: rgb(237 0 0); */
+    border-radius: 5px;
+}
