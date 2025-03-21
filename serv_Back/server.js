@@ -27,28 +27,36 @@ bddConnection.connect(err => {
     console.log("✅ Connexion réussie à la base de données");
 });
 
-// ➤ 🔒 Route API pour allumer ou éteindre la LED
-app.post('/api/led', (req, res) => {
-    const { state } = req.body; // state = true (allumer) ou false (éteindre)
+//---------------------------------------------------------------------------------------------------------//
+///Partie arduino : 
+app.post('/api/led', async (req, res) => {
+    const { color } = req.body; // Ex: "rouge", "vert", "bleu", "off"
 
-    if (state === true) {
-        port.write("1\n"); // Envoie "1" à l'Arduino
-        res.json({ message: "LED allumée" });
-    } else if (state === false) {
-        port.write("0\n"); // Envoie "0" à l'Arduino
-        res.json({ message: "LED éteinte" });
-    } else {
-        res.status(400).json({ error: "État invalide, utilisez true ou false" });
+    // Adresse IP de l'Arduino (MODIFIE-LA selon ton réseau)
+    const arduinoIP = "http://192.168.1.100";  
+
+    // Correspondance des couleurs avec les routes de l’Arduino
+    const colorCommands = {
+        rouge: "led_red",
+        vert: "led_green",
+        bleu: "led_blue",
+        off: "led_off"
+    };
+
+    if (!colorCommands[color]) {
+        return res.status(400).json({ error: "Couleur invalide (rouge, vert, bleu, off)" });
+    }
+
+    try {
+        // Envoie une requête HTTP à l'Arduino
+        const response = await axios.get(`${arduinoIP}/${colorCommands[color]}`);
+        res.json({ message: `LED ${color} activée`, response: response.data });
+    } catch (error) {
+        res.status(500).json({ error: "Erreur de communication avec l'Arduino", details: error.message });
     }
 });
 
-// ➤ 🔒
-parser.on("data", (data) => {
-    console.log("Message reçu de l'Arduino:", data);
-});
-
-
-cor
+//---------------------------------------------------------------------------------------------------------//
 // ➤ 🔒 Limiter l'ajout d'un utilisateur
 app.post('/api/addutilisateur', (req, res) => {
     const { nom, prenom } = req.body;
@@ -163,16 +171,3 @@ process.on('SIGINT', () => {
 app.listen(port, () => {
     console.log(`🚀 Serveur démarré sur http://192.168.65.113:${port}`);
 });
-
-
-
-
-
-
-
-
-
-
-
-
-
