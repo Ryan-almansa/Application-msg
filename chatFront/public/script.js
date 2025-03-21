@@ -317,8 +317,6 @@ function toggleLED(state) {
 }
 
 
-//commande 
-
 document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("message-input");
 
