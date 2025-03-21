@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(cors());
 
 const bddConnection = mysql.createConnection({
-    host: process.env.DB_HOST,
+    host: process.env.DB_HOST,  
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
     password: process.env.DB_PASS
@@ -48,10 +48,7 @@ parser.on("data", (data) => {
 });
 
 
-
-
-
-
+cor
 // ➤ 🔒 Limiter l'ajout d'un utilisateur
 app.post('/api/addutilisateur', (req, res) => {
     const { nom, prenom } = req.body;
