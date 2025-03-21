@@ -1,14 +1,11 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
-const SerialPort = require('serialport');
-const Readline = require('@serialport/parser-readline');
-require('dotenv').config();
+const axios = require('axios');
 
+require('dotenv').config();
 const app = express();
 const port = 20000;
-const parser = port.pipe(new Readline({ delimiter: '\n' }));
-
 app.use(express.json());
 app.use(cors());
 
@@ -28,30 +25,31 @@ bddConnection.connect(err => {
 });
 
 //---------------------------------------------------------------------------------------------------------//
-///Partie arduino : 
+// Partie Arduino : Envoi de commande HTTP à l'Arduino
+const arduinoIP = "http://192.168.1.100"; // Remplacer par l'IP de ton Arduino
+
+const colorCommands = {
+    rouge: "led_red",  // LED rouge
+    vert: "led_green",  // LED verte
+    bleu: "led_blue",  // LED bleue
+    off: "led_off"  // Éteindre la LED
+};
+
+// Endpoint pour contrôler les LEDs
 app.post('/api/led', async (req, res) => {
-    const { color } = req.body; // Ex: "rouge", "vert", "bleu", "off"
+    const { color } = req.body;  // Récupération de la couleur de la LED
 
-    // Adresse IP de l'Arduino (MODIFIE-LA selon ton réseau)
-    const arduinoIP = "http://192.168.1.100";  
-
-    // Correspondance des couleurs avec les routes de l’Arduino
-    const colorCommands = {
-        rouge: "led_red",
-        vert: "led_green",
-        bleu: "led_blue",
-        off: "led_off"
-    };
-
+    // Vérification que la couleur envoyée est valide
     if (!colorCommands[color]) {
         return res.status(400).json({ error: "Couleur invalide (rouge, vert, bleu, off)" });
     }
 
     try {
-        // Envoie une requête HTTP à l'Arduino
+        // Envoi de la commande à l'Arduino via une requête HTTP
         const response = await axios.get(`${arduinoIP}/${colorCommands[color]}`);
         res.json({ message: `LED ${color} activée`, response: response.data });
     } catch (error) {
+        // Si la communication avec l'Arduino échoue
         res.status(500).json({ error: "Erreur de communication avec l'Arduino", details: error.message });
     }
 });
