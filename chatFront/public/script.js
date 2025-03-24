@@ -349,17 +349,26 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-document.getElementById('led-green').addEventListener('click', () => toggleLED("green"));
-document.getElementById('led-red').addEventListener('click', () => toggleLED("red"));
-document.getElementById('led-blue').addEventListener('click', () => toggleLED("blue"));
+document.getElementById("send-message").addEventListener("click", () => {
+    toggleLED("vert", true);
+});
 
-function toggleLED(color) {
+document.querySelector(".Rouge").addEventListener("click", () => {
+    toggleLED("rouge", true);
+});
+
+document.querySelector(".Bleu").addEventListener("click", () => {
+    toggleLED("bleu", true);
+});
+
+// Fonction pour envoyer la commande au serveur Node.js
+function toggleLED(color, state) {
     fetch("http://192.168.65.113:20000/api/led", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ color: color }) // Envoie la couleur choisie
+        body: JSON.stringify({ color: color, state: state })
     })
     .then(response => response.json())
-    .then(data => console.log(data.message))
+    .then(data => console.log(data))
     .catch(error => console.error("Erreur:", error));
 }

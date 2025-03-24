@@ -1,7 +1,8 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
-
+const axios = require('axios');
+const arduinoIP = "192.168.65.120"; // Adresse IP de l'Arduino sur le réseau   
 require('dotenv').config();
 
 const app = express();
@@ -26,21 +27,31 @@ bddConnection.connect(err => {
     console.log("✅ Connexion réussie à la base de données");
 });
 
-app.post('/api/led', (req, res) => {
-    const { color } = req.body; // color = "red", "green" ou "blue"
+// ➤ API pour allumer ou éteindre les LEDs
+app.post('/api/led', async (req, res) => {
+    const { color, state } = req.body; // Ex: { "color": "rouge", "state": true }
 
-    if (color === "red") {
-        port.write("R\n"); // Envoie "R" à l'Arduino pour LED Rouge
-        res.json({ message: "LED Rouge allumée" });
-    } else if (color === "green") {
-        port.write("G\n"); // Envoie "G" à l'Arduino pour LED Verte
-        res.json({ message: "LED Verte allumée" });
-    } else if (color === "blue") {
-        port.write("B\n"); // Envoie "B" à l'Arduino pour LED Bleue
-        res.json({ message: "LED Bleue allumée" });
+    let url;
+    if (color === "rouge") {
+        url = `http://${arduinoIP}/ledRouge/${state ? "on" : "off"}`;
+    } else if (color === "bleu") {
+        url = `http://${arduinoIP}/ledBleu/${state ? "on" : "off"}`;
+    } else if (color === "vert") {
+        url = `http://${arduinoIP}/ledVerte/${state ? "on" : "off"}`;
     } else {
-        res.status(400).json({ error: "Couleur invalide, utilisez red, green ou blue" });
+        return res.status(400).json({ error: "Couleur invalide" });
     }
+
+    try {
+        await axios.get(url);
+        res.json({ message: `LED ${color} ${state ? "allumée" : "éteinte"}` });
+    } catch (error) {
+        res.status(500).json({ error: "Erreur de connexion avec l'Arduino" });
+    }
+});
+
+app.listen(port, () => {
+    console.log(`🚀 Serveur démarré sur http://192.168.65.113:${port}`);
 });
 
 
