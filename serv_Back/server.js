@@ -1,13 +1,12 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
-const SerialPort = require('serialport');
-const Readline = require('@serialport/parser-readline');
+
 require('dotenv').config();
 
 const app = express();
 const port = 20000;
-const parser = port.pipe(new Readline({ delimiter: '\n' }));
+
 
 app.use(express.json());
 app.use(cors());
@@ -42,13 +41,7 @@ app.post('/api/led', (req, res) => {
     }
 });
 
-// ➤ 🔒
-parser.on("data", (data) => {
-    console.log("Message reçu de l'Arduino:", data);
-});
 
-
-cor
 // ➤ 🔒 Limiter l'ajout d'un utilisateur
 app.post('/api/addutilisateur', (req, res) => {
     const { nom, prenom } = req.body;

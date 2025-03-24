@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,49 +16,49 @@
     <title>Speaky</title><!--𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃😫𓂺-->
     <link rel="stylesheet" href="../public/style.css">
 </head>
+
 <body>
 
     <div id="app-container">
         <header>
-            <h1><i class="fa-regular fa-comment"></i> Speaky</h1>            
+            <h1><i class="fa-regular fa-comment"></i> Speaky</h1>
             <div class="container">
                 <button id="send-message" type="submit"><span class="Vert">Led-Vert</span></button>
                 <button id="send-message" type="submit"><span class="Rouge">Led-Rouge</span></button>
                 <button id="send-message" type="submit"><span class="Bleu">Led-bleu</span></button>
-                
-                
-                
+            </div>
 
-    </div>            
         </header>
 
+    </div>
 
-    
-        <main id="main-container">
-            <!-- Zone des messages -->
-            <div id="chat-container" class="chat-box">
-                <div id="messages-container">
-                    <!-- Ici, les messages seront affichés -->
-                </div>
-                <div id="input-container"></div>
+
+
+    <main id="main-container">
+        <!-- Zone des messages -->
+        <div id="chat-container" class="chat-box">
+            <div id="messages-container">
+                <!-- Ici, les messages seront affichés -->
             </div>
-            
-
-            <!-- Zone des utilisateurs -->
-            <div id="users-container">
-                <h2><i class="fa-solid fa-user"></i> Utilisateurs</h2>
-                <ul id="user-list">
-                </ul>
-            </div>
-        </main>
-
-        <!-- Zone d'entrée -->
-        <div id="input-container">
-            <input id="message-input" type="text" placeholder="Tapez un message..." aria-label="Saisissez votre message">
-            <div id="messages"></div>
-            <button id="send-button">Envoyer</button>
+            <div id="input-container"></div>
         </div>
-                                                                                           <!--                                                                    
+
+
+        <!-- Zone des utilisateurs -->
+        <div id="users-container">
+            <h2><i class="fa-solid fa-user"></i> Utilisateurs</h2>
+            <ul id="user-list">
+            </ul>
+        </div>
+    </main>
+
+    <!-- Zone d'entrée -->
+    <div id="input-container">
+        <input id="message-input" type="text" placeholder="Tapez un message..." aria-label="Saisissez votre message">
+        <div id="messages"></div>
+        <button id="send-button">Envoyer</button>
+    </div>
+    <!--                                                                    
                                                                     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠟⠛⠛⠛⠋⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠉⠙⠛⠛⠛⠿⠻⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                                                                     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠋⠀⠀⠀⠀⠀⡀⠠⠤⠒⢂⣉⣉⣉⣑⣒⣒⠒⠒⠒⠒⠒⠒⠒⠀⠀⠐⠒⠚⠻⠿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿
                                                                     ⣿⣿⣿⣿⣿⣿⣿⣿⠏⠀⠀⠀⠀⡠⠔⠉⣀⠔⠒⠉⣀⣀⠀⠀⠀⣀⡀⠈⠉⠑⠒⠒⠒⠒⠒⠈⠉⠉⠉⠁⠂⠀⠈⠙⢿⣿⣿⣿⣿⣿⣿
@@ -79,29 +80,30 @@
                                                                     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣦⣄⡀⠁⠉⠒⠂⠤⠤⣀⣀⣉⡉⠉⠉⠉⠉⢀⣀⣀⡠⠤⠒⠈⠀⠀⠀⠀⣸⣿⣿⣿
                                                                     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣤⣄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿
                                                                     ⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣶⣶⣶⣤⣤⣤⣤⣀⣀⣤⣤⣤⣶⣾⣿⣿⣿⣿⣿
-                                                                    -->                                                     
+                                                                    -->
 
-        <form id="messageForm" action="click">
-            <label for="nom">Nom:</label>
-            <input type="text" id="nom" placeholder="Nom" required>
+    <form id="messageForm" action="click">
+        <label for="nom">Nom:</label>
+        <input type="text" id="nom" placeholder="Nom" required>
 
-            <label for="prenom">Prénom:</label>
-            <input type="text" id="prenom" placeholder="Prénom" required>
+        <label for="prenom">Prénom:</label>
+        <input type="text" id="prenom" placeholder="Prénom" required>
 
-            <button id="creer" type="submit">créer user</button>
-            <button id="connexion" type="submit">connexion</button>
-            <button id="colorButton">Changer de couleur</button>
+        <button id="creer" type="submit">créer user</button>
+        <button id="connexion" type="submit">connexion</button>
+        <button id="colorButton">Changer de couleur</button>
 
-            <button onclick="toggleLED(true)">Allumer LED</button>
-            <button onclick="toggleLED(false)">Éteindre LED</button>
+        <button onclick="toggleLED(true)">Allumer LED</button>
+        <button onclick="toggleLED(false)">Éteindre LED</button>
 
-        </form>
+    </form>
 
-        <footer>
-            <p>© 2025 Speaky inc - Tous droits réservés || Ryan Almansa Matthieu Maquaire </p>
+    <footer>
+        <p>© 2025 Speaky inc - Tous droits réservés || Ryan Almansa Matthieu Maquaire </p>
 
-        </footer>
+    </footer>
     </div>
-        <script src="script.js"></script> 
-    </body>
+    <script src="script.js"></script>
+</body>
+
 </html>
