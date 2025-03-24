@@ -274,7 +274,9 @@ footer {
     padding: 1rem;
     font-size: 0.875rem;
     color: #fff;
-    margin-top: auto;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
 }
 
 /******bouton***/
