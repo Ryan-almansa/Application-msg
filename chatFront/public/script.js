@@ -320,11 +320,6 @@ function toggleLED(state) {
 document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("message-input");
 
-    // Crée le bouton dynamiquement (si nécessaire)
-    const button = document.createElement("button");
-    button.textContent = "Led-Vert";
-    document.body.appendChild(button);
-
     // Commande 
     document.getElementById('send-message').addEventListener('click', () => {
         const message = 'La led est allumée';
