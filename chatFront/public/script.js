@@ -313,28 +313,37 @@ function toggleLED(state) {
     })
     .then(response => response.json())
     .then(data => console.log(data))
-    .catch(error => console.error("Erreur:", error));
+    .catch(error => console.error("Erreur:", error));   
 }
 
 
 document.addEventListener("DOMContentLoaded", () => {
-    const container = document.getElementById("message-input");
-    // Commande 
-    document.getElementById('send-message').addEventListener('click', () => {
-        const message = 'La led est allumée';
-        const chatContainer = document.getElementById('input-container');
-        const messageElement = document.createElement('div');
-        messageElement.textContent = message;
-        messageElement.style.padding = '8px';
-        messageElement.style.margin = '4px 0';
-        messageElement.style.backgroundColor = 'transparent'; // Fond transparent
-        messageElement.style.borderRadius = '5px';
-        messageElement.style.color = '#fff'; // Texte blanc (modifiable)
-        chatContainer.appendChild(messageElement);
+    const buttons = document.querySelectorAll('.send-message'); // Sélectionne tous les boutons
 
-        // Supprime le message après 5 secondes
-        setTimeout(() => {
-            chatContainer.removeChild(messageElement);
-        }, 5000);
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            const color = button.querySelector('span').textContent; // Récupère le texte du bouton
+            const message = `La ${color} est allumée`;
+
+            const chatContainer = document.getElementById('input-container');
+            if (!chatContainer) {
+                console.error("L'élément 'input-container' est introuvable.");
+                return;
+            }
+
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messageElement.style.padding = '8px';
+            messageElement.style.margin = '4px 0';
+            messageElement.style.borderRadius = '5px';
+            messageElement.style.color = '#fff';
+
+            chatContainer.appendChild(messageElement);
+
+            // Supprime le message après 5 secondes
+            setTimeout(() => {
+                chatContainer.removeChild(messageElement);
+            }, 5000);
+        });
     });
 });
