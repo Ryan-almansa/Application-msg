@@ -319,7 +319,6 @@ function toggleLED(state) {
 
 document.addEventListener("DOMContentLoaded", () => {
     const container = document.getElementById("message-input");
-
     // Commande 
     document.getElementById('send-message').addEventListener('click', () => {
         const message = 'La led est allumée';
