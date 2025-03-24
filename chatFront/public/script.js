@@ -347,3 +347,19 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+
+document.getElementById('led-green').addEventListener('click', () => toggleLED("green"));
+document.getElementById('led-red').addEventListener('click', () => toggleLED("red"));
+document.getElementById('led-blue').addEventListener('click', () => toggleLED("blue"));
+
+function toggleLED(color) {
+    fetch("http://192.168.65.113:20000/api/led", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ color: color }) // Envoie la couleur choisie
+    })
+    .then(response => response.json())
+    .then(data => console.log(data.message))
+    .catch(error => console.error("Erreur:", error));
+}

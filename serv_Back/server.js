@@ -26,18 +26,20 @@ bddConnection.connect(err => {
     console.log("✅ Connexion réussie à la base de données");
 });
 
-// ➤ 🔒 Route API pour allumer ou éteindre la LED
 app.post('/api/led', (req, res) => {
-    const { state } = req.body; // state = true (allumer) ou false (éteindre)
+    const { color } = req.body; // color = "red", "green" ou "blue"
 
-    if (state === true) {
-        port.write("1\n"); // Envoie "1" à l'Arduino
-        res.json({ message: "LED allumée" });
-    } else if (state === false) {
-        port.write("0\n"); // Envoie "0" à l'Arduino
-        res.json({ message: "LED éteinte" });
+    if (color === "red") {
+        port.write("R\n"); // Envoie "R" à l'Arduino pour LED Rouge
+        res.json({ message: "LED Rouge allumée" });
+    } else if (color === "green") {
+        port.write("G\n"); // Envoie "G" à l'Arduino pour LED Verte
+        res.json({ message: "LED Verte allumée" });
+    } else if (color === "blue") {
+        port.write("B\n"); // Envoie "B" à l'Arduino pour LED Bleue
+        res.json({ message: "LED Bleue allumée" });
     } else {
-        res.status(400).json({ error: "État invalide, utilisez true ou false" });
+        res.status(400).json({ error: "Couleur invalide, utilisez red, green ou blue" });
     }
 });
 
