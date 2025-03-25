@@ -50,9 +50,6 @@ app.post('/api/led', async (req, res) => {
     }
 });
 
-app.listen(port, () => {
-    console.log(`🚀 Serveur démarré sur http://192.168.65.113:${port}`);
-});
 
 
 // ➤ 🔒 Limiter l'ajout d'un utilisateur
