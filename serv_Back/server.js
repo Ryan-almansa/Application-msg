@@ -29,22 +29,17 @@ bddConnection.connect(err => {
 
 // ➤ API pour allumer ou éteindre les LEDs
 app.post('/api/led', async (req, res) => {
-    const { color, state } = req.body; // Ex: { "color": "rouge", "state": true }
+    const { color } = req.body; // Ex: { "color": "red" }
 
-    let url;
-    if (color === "rouge") {
-        url = `http://${arduinoIP}/ledRouge/${state ? "on" : "off"}`;
-    } else if (color === "bleu") {
-        url = `http://${arduinoIP}/ledBleu/${state ? "on" : "off"}`;
-    } else if (color === "vert") {
-        url = `http://${arduinoIP}/ledVerte/${state ? "on" : "off"}`;
-    } else {
+    if (!["red", "green", "blue"].includes(color)) {
         return res.status(400).json({ error: "Couleur invalide" });
     }
 
+    const url = `${arduinoIP}/setColor/${color}`;
+
     try {
         await axios.get(url);
-        res.json({ message: `LED ${color} ${state ? "allumée" : "éteinte"}` });
+        res.json({ message: `LED RGB changée en ${color}` });
     } catch (error) {
         res.status(500).json({ error: "Erreur de connexion avec l'Arduino" });
     }
