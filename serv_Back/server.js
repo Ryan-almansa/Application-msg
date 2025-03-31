@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
 const axios = require('axios');
-const arduinoIP = "192.168.65.120"; // Adresse IP de l'Arduino sur le réseau   
+const arduinoIP = "192.168.65.140"; // Adresse IP de l'Arduino sur le réseau   
 require('dotenv').config();
 
 const app = express();
