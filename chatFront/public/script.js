@@ -23,8 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-   
-    
     // Récupérer les messages depuis l'API
     function fetchMessages() {
         fetch("http://192.168.65.113:20000/api/recuperation")
@@ -248,7 +246,7 @@ function getRandomColor() {
     }
     return color;
 }
-
+//Partie arduino : 
 function toggleLED(state) {
     fetch("http://192.168.65.113:20000/api/led", {
         method: "POST",
