@@ -65,25 +65,44 @@ header h1 {
     flex: 3;
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 12px;
     padding: 1rem;
     overflow-y: auto;
-    /* J'ai viré ça ça foutait la merde sur la hauteur */
-    /*height: calc(100vh - 200px);  Ajuste la hauteur pour laisser de l'espace pour la barre d'entrée */
+    max-height: 500px; /* Ajuste selon ton besoin */
+    scroll-behavior: smooth;
 }
 
-/* Conteneur des messages */
+/* Messages */
 #messages-container {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 10px;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    border: 1px solid #ffffff30;
-    overflow-y: auto;
+    gap: 8px;
 }
+
+/* Scrollbar personnalisée */
+#messages-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#messages-container::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+}
+
+/* Message Style */
+.message {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: white;
+    width: fit-content;
+    max-width: 80%;
+}
+
 
 /* Zone des utilisateurs */
 #users-container {
