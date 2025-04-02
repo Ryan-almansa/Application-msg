@@ -2,7 +2,7 @@ const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
 const axios = require('axios');
-const arduinoIP = "192.168.65.140"; // Adresse IP de l'Arduino sur le réseau   
+const arduinoIP = "192.168.64.140"; // Adresse IP de l'Arduino sur le réseau   
 require('dotenv').config();
 
 const app = express();
@@ -30,12 +30,13 @@ bddConnection.connect(err => {
 // ➤ API pour allumer ou éteindre les LEDs
 app.post('/api/led', async (req, res) => {
     const { color } = req.body; // Ex: { "color": "red" }
+    console.log("caca couleur caca ")
 
     if (!["red", "green", "blue"].includes(color)) {
         return res.status(400).json({ error: "Couleur invalide" });
     }
-
-    const url = `${arduinoIP}/setColor/${color}`;
+    const url = `${arduinoIP}/color=${color}`;
+    console.log("caca couleur caca ")
 
     try {
         await axios.get(url);
@@ -113,6 +114,7 @@ app.post('/api/messages', (req, res) => {
         SELECT COUNT(*) AS count 
         FROM message 
         WHERE idutilisateur = ? 
+        AND idCategorie = 1
         AND date = CURDATE() 
         AND heure > SUBTIME(CURTIME(), '00:01:00')
     `;
@@ -125,7 +127,7 @@ app.post('/api/messages', (req, res) => {
         }
 
         // Ajouter le message
-        const query = "INSERT INTO message (contenu, idutilisateur, date, heure) VALUES (?, ?, CURDATE(), CURTIME())";
+        const query = "INSERT INTO message (contenu, idutilisateur, date, heure,idCategorie) VALUES (?, ?, CURDATE(), CURTIME(),1)";
         bddConnection.query(query, [contenu, idutilisateur], (err, result) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ message: "Message envoyé avec succès", id: result.insertId });
@@ -133,13 +135,49 @@ app.post('/api/messages', (req, res) => {
     });
 });
 
-// ➤ Récupérer les messages
+// ➤ 🔒 Limiter l'ajout de messages (5 par minute max)
+app.post('/api/addMessageByCategorieId', (req, res) => {
+    const { contenu, idutilisateur , idCategorie} = req.body;
+
+    if (!contenu || !idutilisateur) {
+        return res.status(400).json({ error: "Contenu et id utilisateur sont requis" });
+    }
+
+    // Vérifier le nombre de messages envoyés par l'utilisateur dans la dernière minute
+    const checkRateLimit = `
+        SELECT COUNT(*) AS count 
+        FROM message 
+        WHERE idutilisateur = ? 
+        AND idCategorie = ?
+        AND date = CURDATE() 
+        AND heure > SUBTIME(CURTIME(), '00:01:00')
+    `;
+
+    bddConnection.query(checkRateLimit, [idutilisateur,idCategorie], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+
+        if (result[0].count >= 5) {
+            return res.status(429).json({ error: "Trop de messages envoyés, veuillez attendre." });
+        }
+
+        // Ajouter le message
+        const query = "INSERT INTO message (contenu, idutilisateur, date, heure,idCategorie) VALUES (?, ?, CURDATE(), CURTIME(),?)";
+        bddConnection.query(query, [contenu, idutilisateur,idCategorie], (err, result) => {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: "Message envoyé avec succès", id: result.insertId });
+        });
+    });
+});
+
+
+
 app.get('/api/recuperation', (req, res) => {
     const query = `
         SELECT message.id, message.contenu, message.date, message.heure, 
                utilisateur.nom, utilisateur.prenom 
         FROM message 
         JOIN utilisateur ON message.idutilisateur = utilisateur.idutilisateur
+        WHERE idCategorie = 1
         ORDER BY message.date DESC, message.heure DESC
     `;
 
@@ -148,6 +186,89 @@ app.get('/api/recuperation', (req, res) => {
         res.json(results);
     });
 });
+
+// ➤ Récupérer les messages par catégoruy
+app.get('/api/recuperationByCategorieId', (req, res) => {
+    const { idCategorie } = req.body;
+    
+    if (!idCategorie) {
+        return res.status(400).json({ error: 'L\'id de la catégorie est requis.' });
+    }
+
+    const query = `
+        SELECT message.id, message.contenu, message.date, message.heure, 
+               utilisateur.nom, utilisateur.prenom 
+        FROM message 
+        JOIN utilisateur ON message.idutilisateur = utilisateur.idutilisateur
+        WHERE message.idCategorie = ?
+        ORDER BY message.date DESC, message.heure DESC
+    `;
+
+    bddConnection.query(query, [idCategorie], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+// ➤ Récupérer toutes les catégories
+app.get('/api/categories', (req, res) => {
+    const query = 'SELECT * FROM Categorie';
+    bddConnection.query(query, (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+// ➤ Récupérer une catégorie par ID
+app.get('/api/categories/:id', (req, res) => {
+    const { id } = req.params;
+    const query = 'SELECT * FROM Categorie WHERE id = ?';
+    bddConnection.query(query, [id], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (results.length === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
+        res.json(results[0]);
+    });
+});
+
+// ➤ Ajouter une nouvelle catégorie
+app.post('/api/categories', (req, res) => {
+    const { nom } = req.body;
+    if (!nom) return res.status(400).json({ error: 'Le nom de la catégorie est requis.' });
+    
+    const query = 'INSERT INTO Categorie (nom) VALUES (?)';
+    bddConnection.query(query, [nom], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: result.insertId, nom });
+    });
+});
+
+// ➤ Mettre à jour une catégorie
+app.put('/api/categories/:id', (req, res) => {
+    const { id } = req.params;
+    const { nom } = req.body;
+    if (!nom) return res.status(400).json({ error: 'Le nom de la catégorie est requis.' });
+    
+    const query = 'UPDATE Categorie SET nom = ? WHERE id = ?';
+    bddConnection.query(query, [nom, id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (result.affectedRows === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
+        res.json({ message: 'Catégorie mise à jour avec succès' });
+    });
+});
+
+// ➤ Supprimer une catégorie
+app.delete('/api/categories/:id', (req, res) => {
+    const { id } = req.params;
+    
+    const query = 'DELETE FROM Categorie WHERE id = ?';
+    bddConnection.query(query, [id], (err, result) => {
+        if (err) return res.status(500).json({ error: err.message });
+        if (result.affectedRows === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
+        res.json({ message: 'Catégorie supprimée avec succès' });
+    });
+});
+
+
 
 // Gestion de la fermeture propre
 process.on('SIGINT', () => {

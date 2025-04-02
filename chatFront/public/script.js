@@ -228,6 +228,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+
+
+
+
+
+
 const button = document.getElementById('colorButton');
 
 button.addEventListener('click', () => {
@@ -246,7 +252,7 @@ function getRandomColor() {
     }
     return color;
 }
-//Partie arduino : 
+
 function toggleLED(state) {
     fetch("http://192.168.65.113:20000/api/led", {
         method: "POST",
@@ -291,16 +297,21 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-document.getElementById("send-message").addEventListener("click", () => {
-    toggleLED("vert", true);
-});
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("send-message")?.addEventListener("click", () => {
+        console.log("Bouton vert cliqué");
+        toggleLED("green", true);
+    });
 
-document.querySelector(".Rouge").addEventListener("click", () => {
-    toggleLED("rouge", true);
-});
+    document.querySelector(".Rouge")?.addEventListener("click", () => {
+        console.log("Bouton rouge cliqué");
+        toggleLED("red", true);
+    });
 
-document.querySelector(".Bleu").addEventListener("click", () => {
-    toggleLED("bleu", true);
+    document.querySelector(".Bleu")?.addEventListener("click", () => {
+        console.log("Bouton bleu cliqué");
+        toggleLED("bleue", true);
+    });
 });
 
 // Fonction pour envoyer la commande au serveur Node.js
@@ -310,7 +321,13 @@ function toggleLED(color, state) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ color: color, state: state })
     })
-    .then(response => response.json())
-    .then(data => console.log(data))
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => console.log("Réponse serveur:", data))
     .catch(error => console.error("Erreur:", error));
 }
+
