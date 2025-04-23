@@ -13,68 +13,66 @@
     <!-- Liens pour les icones  -->
     <script src="https://kit.fontawesome.com/d2592aca38.js" crossorigin="anonymous"></script>
 
-    <title>Speaky</title><!--𝄃𝄃𝄂𝄂𝄀𝄁𝄃𝄂𝄂𝄃😫𓂺-->
+    <title>Speaky</title>
     <link rel="stylesheet" href="../public/style.css">
 </head>
 
 <body>
-
     <div id="app-container">
         <header>
             <h1><i class="fa-regular fa-comment"></i> Speaky</h1>
             <div class="container">
-                <button class="send-message"><span class="Vert">Led-Vert</span></button>
-                <button class="send-message"><span class="Rouge">Led-Rouge</span></button>
-                <button class="send-message"><span class="Bleu">Led-Bleu</span></button>
+                <button class="send-message" id="green-led"><span class="Vert">Led-Vert</span></button>
+                <button class="send-message" id="red-led"><span class="Rouge">Led-Rouge</span></button>
+                <button class="send-message" id="blue-led"><span class="Bleu">Led-Bleu</span></button>
             </div>
         </header>
-    </div>
-    
 
-    <main id="main-container">
-        <!-- Zone des messages -->        
-        <div id="chat-container" class="chat-box">
-            <div id="messages-container">
-                <!-- Ici, les messages seront affichés -->
+        <div id="category-controls">
+            <select id="category-selector"></select>
+            <input type="text" id="new-category" placeholder="Nouvelle catégorie">
+            <button id="add-category">Ajouter catégorie</button>
+        </div>
+
+        <main id="main-container">
+            <!-- Zone des messages -->        
+            <div id="chat-container" class="chat-box">
+                <div id="messages-container">
+                    <!-- Ici, les messages seront affichés -->
+                </div>
             </div>
-            <div id="input-container"></div>
+
+            <!-- Zone des utilisateurs -->
+            <div id="users-container">
+                <h2><i class="fa-solid fa-user"></i> Utilisateurs</h2>
+                <ul id="user-list">
+                    <!-- Liste des utilisateurs -->
+                </ul>
+            </div>
+        </main>
+
+        <!-- Zone d'entrée -->
+        <div id="input-container">
+            <input id="message-input" type="text" placeholder="Tapez un message..." aria-label="Saisissez votre message">
+            <button id="send-button">Envoyer</button>
         </div>
 
+        <form id="messageForm">
+            <label for="nom">Nom:</label>
+            <input type="text" id="nom" placeholder="Nom" required>
 
-        <!-- Zone des utilisateurs -->
-        <div id="users-container">
-            <h2><i class="fa-solid fa-user"></i> Utilisateurs</h2>
-            <ul id="user-list">
-            </ul>
-        </div>
-    </main>
+            <label for="prenom">Prénom:</label>
+            <input type="text" id="prenom" placeholder="Prénom" required>
 
-    <!-- Zone d'entrée -->
-    <div id="input-container">
-        <input id="message-input" type="text" placeholder="Tapez un message..." aria-label="Saisissez votre message">
-        <div id="messages"></div>
-        <button id="send-button">Envoyer</button>
-    </div>
+            <button id="creer" type="button">Créer user</button>
+            <button id="connexion" type="button">Connexion</button>
+            <button id="colorButton" type="button">Changer de couleur</button>
+        </form>
 
-    <form id="messageForm" action="click">
-        <label for="nom">Nom:</label>
-        <input type="text" id="nom" placeholder="Nom" required>
-
-        <label for="prenom">Prénom:</label>
-        <input type="text" id="prenom" placeholder="Prénom" required>
-
-        <button id="creer" type="submit">créer user</button>
-        <button id="connexion" type="submit">connexion</button>
-        <button id="colorButton">Changer de couleur</button>
-
-    </form>
-
-    <footer>
-        <p>© 2025 Speaky inc - Tous droits réservés || Ryan Almansa Matthieu Maquaire </p>
-
-    </footer>
+        <footer>
+            <p>© 2025 Speaky inc - Tous droits réservés || Ryan Almansa Matthieu Maquaire</p>
+        </footer>
     </div>
     <script src="script.js"></script>
 </body>
-
 </html>
