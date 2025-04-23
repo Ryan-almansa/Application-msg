@@ -330,4 +330,3 @@ function toggleLED(color, state) {
     .then(data => console.log("Réponse serveur:", data))
     .catch(error => console.error("Erreur:", error));
 }
-
