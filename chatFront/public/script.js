@@ -52,19 +52,20 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch("http://192.168.65.113:20000/api/categories");
             if (!response.ok) throw new Error("Erreur lors de la récupération des catégories.");
-            
+                
             const data = await response.json();
             categorySelector.innerHTML = "";
             
             if (data.categories && data.categories.length > 0) {
                 data.categories.forEach(cat => {
                     const option = document.createElement("option");
-                    option.value = cat.idcategorie;
-                    option.textContent = cat.nom;
+                    option.value = cat.id;
+                    option.textContent = cat.Nom;
                     categorySelector.appendChild(option);
                 });
                 
                 currentCategoryId = data.categories[0].idcategorie;
+
                 fetchMessages(); // Recharger les messages pour cette catégorie
             }
         } catch (error) {

@@ -154,21 +154,34 @@ app.get('/api/recuperation', (req, res) => {
 // ➤ Récupérer toutes les catégories
 app.get('/api/categories', (req, res) => {
     const query = 'SELECT * FROM Categorie';
-    bddConnection.query(query, (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ categories: results });
-    });
+    try{
+        bddConnection.query(query, (err, results) => {
+            if (err) {
+                console.error('Erreur SQL:\n', err)
+                return res.status(500).json({ error: err.message });
+            }
+            res.json({ categories: results });
+        });
+    } catch (err) {
+        console.error(err);
+    }
 });
 
 // ➤ Récupérer une catégorie par ID
 app.get('/api/categories/:id', (req, res) => {
-    const { id } = req.params;
+    try{
+        const { id } = req.params;
     const query = 'SELECT * FROM Categorie WHERE idcategorie = ?';
     bddConnection.query(query, [id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         if (results.length === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
         res.json(results[0]);
     });
+    }catch(err)
+    {
+        console.error(err);
+    }
+    
 });
 
 // ➤ Ajouter une nouvelle catégorie
