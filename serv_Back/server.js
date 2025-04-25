@@ -26,22 +26,16 @@ bddConnection.connect(err => {
     console.log("✅ Connexion réussie à la base de données");
 });
 
+//--------Partie Arduino--------
+
 // ➤ API pour allumer ou éteindre les LEDs
-app.post('/api/led', async (req, res) => {
-    const { color, state } = req.body; // Ex: { "color": "red", "state": true }
-
-    if (!["red", "green", "blue"].includes(color)) {
-        return res.status(400).json({ error: "Couleur invalide" });
+app.post('/api/red', async (req, res) => {
+    try{
+        await fetch('http://192.168.65.140/led/red');
+        res.json({success: isValid, message});
     }
-    
-    const url = `http://${arduinoIP}/color=${color}`;
-
-    try {
-        await axios.get(url);
-        res.json({ message: `LED RGB changée en ${color}` });
-    } catch (error) {
-        console.error("Erreur Arduino:", error.message);
-        res.status(500).json({ error: "Erreur de connexion avec l'Arduino" });
+    catch(err){
+        console.log("err")
     }
 });
 
