@@ -6,10 +6,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const userList = document.getElementById('user-list');
     const creerBtn = document.getElementById("creer");
     const connexionBtn = document.getElementById("connexion");
-    const categorySelector = document.getElementById("category-selector");  
+    const categorySelector = document.getElementById("category-selector");
     const newCategoryInput = document.getElementById("new-category");
     const addCategoryBtn = document.getElementById("add-category");
-    
+
     // Vérifier si les éléments de catégorie existent
     const hasCategoryElements = categorySelector && newCategoryInput && addCategoryBtn;
     if (!hasCategoryElements && (categorySelector || newCategoryInput || addCategoryBtn)) {
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Mettre à jour la liste des utilisateurs dans l'interface
     function updateUserList() {
         if (!userList) return;
-        
+
         userList.innerHTML = '';
         users.forEach(user => {
             const li = document.createElement('li');
@@ -48,14 +48,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Récupérer les catégories depuis l'API
     async function fetchCategories() {
         if (!categorySelector) return;
-        
+
         try {
             const response = await fetch("http://192.168.65.113:20000/api/categories");
             if (!response.ok) throw new Error("Erreur lors de la récupération des catégories.");
-                
+
             const data = await response.json();
             categorySelector.innerHTML = "";
-            
+
             if (data.categories && data.categories.length > 0) {
                 data.categories.forEach(cat => {
                     const option = document.createElement("option");
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     option.textContent = cat.Nom;
                     categorySelector.appendChild(option);
                 });
-                
+
                 currentCategoryId = data.categories[0].idcategorie;
 
                 fetchMessages(); // Recharger les messages pour cette catégorie
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ajouter une nouvelle catégorie
     async function addCategory() {
         if (!newCategoryInput) return;
-        
+
         const newCatName = newCategoryInput.value.trim();
         if (!newCatName) {
             alert("Nom de catégorie vide");
@@ -106,9 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Récupérer les messages depuis l'API
     function fetchMessages() {
         if (!messagesContainer) return;
-        
+
         const categoryParam = currentCategoryId ? `?categorie=${currentCategoryId}` : '';
-        
+
         fetch(`http://192.168.65.113:20000/api/recuperation${categoryParam}`)
             .then(response => {
                 if (!response.ok) throw new Error("Erreur lors de la récupération des messages.");
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ajouter un message à l'interface
     function addMessage(content, isOwnMessage = false) {
         if (!messagesContainer) return;
-        
+
         const messageDiv = document.createElement('div');
         messageDiv.classList.add(isOwnMessage ? 'own-message' : 'other-message');
         messageDiv.textContent = content;
@@ -156,32 +156,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // Envoyer un message
     async function sendMessage() {
         if (!messageInput) return;
-        
+
         const message = messageInput.value.trim();
-    
+
         if (message === '' || message.length < 2) {
             alert("Veuillez saisir un message d'au moins 2 caractères.");
             return;
         }
-    
+
         if (sendButton) sendButton.disabled = true;
         addMessage(message, true);
         messageInput.value = '';
-    
+
         try {
             const userId = localStorage.getItem("userId");
             if (!userId) {
                 alert("Utilisateur non connecté.");
                 return;
             }
-    
+
             const requestBody = {
                 contenu: message,
                 idutilisateur: userId,
                 // Toujours inclure une valeur pour idCategorie
                 idCategorie: currentCategoryId || 1  // Utilise 1 comme catégorie par défaut
             };
-    
+
             const response = await fetch("http://192.168.65.113:20000/api/messages", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -205,12 +205,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Créer un nouvel utilisateur
     async function createUser(event) {
         event.preventDefault();
-        
+
         const nomInput = document.getElementById("nom");
         const prenomInput = document.getElementById("prenom");
-        
+
         if (!nomInput || !prenomInput) return;
-        
+
         const nom = nomInput.value.trim();
         const prenom = prenomInput.value.trim();
 
@@ -242,12 +242,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Connexion utilisateur
     async function connectUser(event) {
         event.preventDefault();
-        
+
         const nomInput = document.getElementById("nom");
         const prenomInput = document.getElementById("prenom");
-        
+
         if (!nomInput || !prenomInput) return;
-        
+
         const nomSaisi = nomInput.value.trim();
         const prenomSaisi = prenomInput.value.trim();
 
@@ -291,7 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return color;
     }
 
-    // Contrôler les LEDs
+    /* Contrôler les LEDs
     function toggleLED(color, state) {
         fetch("http://192.168.65.113:20000/api/led", {
             method: "POST",
@@ -306,7 +306,8 @@ document.addEventListener('DOMContentLoaded', () => {
         })
         .then(data => console.log("Réponse serveur LED:", data))
         .catch(error => console.error("Erreur LED:", error));
-    }
+    }*/
+
 
     // Initialisation des écouteurs d'événements
     function initEventListeners() {
@@ -314,14 +315,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sendButton) {
             sendButton.addEventListener('click', sendMessage);
         }
-        
+
         // Entrée clavier pour envoyer un message
         if (messageInput) {
             messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') sendMessage();
             });
         }
-        
+
         // Gestion des catégories
         if (categorySelector) {
             categorySelector.addEventListener("change", (e) => {
@@ -329,20 +330,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 fetchMessages();
             });
         }
-        
+
         if (addCategoryBtn) {
             addCategoryBtn.addEventListener("click", addCategory);
         }
-        
+
         // Gestion des utilisateurs
         if (creerBtn) {
             creerBtn.addEventListener("click", createUser);
         }
-        
+
         if (connexionBtn) {
             connexionBtn.addEventListener("click", connectUser);
         }
-        
+
         // Bouton de changement de couleur
         const colorButton = document.getElementById('colorButton');
         if (colorButton) {
@@ -350,7 +351,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.body.style.backgroundColor = getRandomColor();
             });
         }
-        
+
         // Boutons LED
         const greenButton = document.getElementById("send-message");
         if (greenButton) {
@@ -359,7 +360,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleLED("green", true);
             });
         }
-        
+
         const redButton = document.querySelector(".Rouge");
         if (redButton) {
             redButton.addEventListener("click", () => {
@@ -367,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleLED("red", true);
             });
         }
-        
+
         const blueButton = document.querySelector(".Bleu");
         if (blueButton) {
             blueButton.addEventListener("click", () => {
@@ -375,29 +376,29 @@ document.addEventListener('DOMContentLoaded', () => {
                 toggleLED("blue", true);
             });
         }
-        
+
         // Boutons d'envoi de message de couleur
         const messageButtons = document.querySelectorAll('.send-message');
         messageButtons.forEach(button => {
             button.addEventListener('click', () => {
                 const span = button.querySelector('span');
                 if (!span) return;
-                
+
                 const color = span.textContent;
                 const message = `La ${color} est allumée`;
-                
+
                 const chatContainer = document.getElementById('input-container');
                 if (!chatContainer) return;
-                
+
                 const messageElement = document.createElement('div');
                 messageElement.textContent = message;
                 messageElement.style.padding = '8px';
                 messageElement.style.margin = '4px 0';
                 messageElement.style.borderRadius = '5px';
                 messageElement.style.color = '#fff';
-                
+
                 chatContainer.appendChild(messageElement);
-                
+
                 // Supprime le message après 5 secondes
                 setTimeout(() => {
                     if (chatContainer.contains(messageElement)) {
@@ -411,7 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialisation de l'application
     function init() {
         initEventListeners();
-        
+
         // Charger les données initiales
         if (hasCategoryElements) {
             fetchCategories();
@@ -419,11 +420,60 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchMessages();
         }
         fetchUsers();
-        
+
         // Actualisation automatique
-        setInterval(refreshPageContent, 1000);
+        setInterval(refreshPageContent, 1000000);
     }
 
     // Lancer l'initialisation
     init();
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+    const arduinoIP = "http://192.168.65.125";
+
+    const buttons = document.querySelectorAll('button.send-messages');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', function () {
+            let color = '';
+
+            if (button.querySelector('.Vert')) {
+                color = "green";
+            } else if (button.querySelector('.Rouge')) {
+                color = "red";
+            } else if (button.querySelector('.Bleu')) {
+                color = "blue";
+            }
+
+            if (color) {
+                sendRequestToArduino(color);
+            }
+        });
+    });
+
+    function sendRequestToArduino(color) {
+        const url = `${arduinoIP}/led/${color}`;
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                console.log(`LED ${color} allumé avec succès`);
+            } else {
+                console.error(`Erreur lors de l'allumage de la LED : ${xhr.statusText}`);
+            }
+        };
+
+        xhr.onerror = function () {
+            console.error(`Erreur réseau lors de la communication avec l'arduino`);
+        };
+
+        xhr.send();
+
+        console.log(`Requête envoyée pour allumé la LED ${color}: ${url}`);
+    }
+    const addStopButton = () => {
+    }
 });

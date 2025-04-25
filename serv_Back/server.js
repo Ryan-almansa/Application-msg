@@ -2,7 +2,6 @@ const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
 const axios = require('axios');
-const arduinoIP = "192.168.64.140"; // Adresse IP de l'Arduino sur le réseau   
 require('dotenv').config();
 
 const app = express();
@@ -25,8 +24,7 @@ bddConnection.connect(err => {
     }
     console.log("✅ Connexion réussie à la base de données");
 });
-
-//--------Partie Arduino--------
+  
 
 // ➤ API pour allumer ou éteindre les LEDs
 app.post('/api/red', async (req, res) => {
@@ -38,6 +36,16 @@ app.post('/api/red', async (req, res) => {
         console.log("err")
     }
 });
+
+
+
+
+
+
+
+
+
+
 
 // ➤ 🔒 Limiter l'ajout d'un utilisateur
 app.post('/api/addutilisateur', (req, res) => {
