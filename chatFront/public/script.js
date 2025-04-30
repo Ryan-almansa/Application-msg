@@ -10,6 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const newCategoryInput = document.getElementById("new-category");
     const addCategoryBtn = document.getElementById("add-category");
 
+    function escapeHTML(str) {
+        return str.replace(/[&<>"']/g, (match) => {
+            const escape = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return escape[match];
+        });
+    }
+    
     // Vérifier si les éléments de catégorie existent
     const hasCategoryElements = categorySelector && newCategoryInput && addCategoryBtn;
     if (!hasCategoryElements && (categorySelector || newCategoryInput || addCategoryBtn)) {
@@ -40,7 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         userList.innerHTML = '';
         users.forEach(user => {
             const li = document.createElement('li');
-            li.textContent = `${user.nom} ${user.prenom}`;
+            messageElement.innerHTML = `<strong>${escapeHTML(msg.nom)} ${escapeHTML(msg.prenom)}:</strong> ${escapeHTML(msg.contenu)} <span class="time">${escapeHTML(msg.heure)}</span>`;
+
             userList.appendChild(li);
         });
     }
@@ -105,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Récupérer les messages depuis l'API
     function fetchMessages() {
-        if (!messagesContainer) return;
+        messageElement.innerHTML = `<strong>${msg.nom} ${msg.prenom}:</strong> ${msg.contenu} <span class="time">${msg.heure}</span>`;
 
         const categoryParam = currentCategoryId ? `?categorie=${currentCategoryId}` : '';
 
@@ -120,9 +134,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     data.forEach(msg => {
                         const messageElement = document.createElement("div");
                         messageElement.classList.add("message");
-                        messageElement.innerHTML = `<strong>${msg.nom} ${msg.prenom}:</strong> ${msg.contenu} <span class="time">${msg.heure}</span>`;
+                    
+                        const strong = document.createElement("strong");
+                        strong.textContent = `${msg.nom} ${msg.prenom}:`;
+                    
+                        const contenuText = document.createTextNode(` ${msg.contenu} `);
+                    
+                        const timeSpan = document.createElement("span");
+                        timeSpan.classList.add("time");
+                        timeSpan.textContent = msg.heure;
+                    
+                        messageElement.appendChild(strong);
+                        messageElement.appendChild(contenuText);
+                        messageElement.appendChild(timeSpan);
+                    
                         messagesContainer.appendChild(messageElement);
                     });
+                    
                 }
             })
             .catch(error => {
@@ -422,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchUsers();
 
         // Actualisation automatique
-        setInterval(refreshPageContent, 1000000);
+        setInterval(refreshPageContent, 100);
     }
 
     // Lancer l'initialisation
