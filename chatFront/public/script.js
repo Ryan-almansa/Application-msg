@@ -10,6 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const newCategoryInput = document.getElementById("new-category");
     const addCategoryBtn = document.getElementById("add-category");
 
+    function escapeHTML(str) {
+        return str.replace(/[&<>"']/g, (match) => {
+            const escape = {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            };
+            return escape[match];
+        });
+    }
+    
     // Vérifier si les éléments de catégorie existent
     const hasCategoryElements = categorySelector && newCategoryInput && addCategoryBtn;
     if (!hasCategoryElements && (categorySelector || newCategoryInput || addCategoryBtn)) {
@@ -19,17 +32,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Variables globales
     let currentCategoryId = null;
     let users = [];
-
-    // Fonction pour échapper les caractères spéciaux HTML - PROTECTION XSS
-    function escapeHtml(text) {
-        if (!text) return '';
-        return String(text)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
-    }
 
     // Récupérer les utilisateurs depuis l'API
     async function fetchUsers() {
@@ -51,8 +53,8 @@ document.addEventListener('DOMContentLoaded', () => {
         userList.innerHTML = '';
         users.forEach(user => {
             const li = document.createElement('li');
-            // Protection XSS lors de l'affichage des noms d'utilisateur
-            li.textContent = `${escapeHtml(user.nom)} ${escapeHtml(user.prenom)}`;
+            messageElement.innerHTML = `<strong>${escapeHTML(msg.nom)} ${escapeHTML(msg.prenom)}:</strong> ${escapeHTML(msg.contenu)} <span class="time">${escapeHTML(msg.heure)}</span>`;
+
             userList.appendChild(li);
         });
     }
@@ -72,8 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data.categories.forEach(cat => {
                     const option = document.createElement("option");
                     option.value = cat.id;
-                    // Protection XSS lors de l'affichage des noms de catégories
-                    option.textContent = escapeHtml(cat.Nom);
+                    option.textContent = cat.Nom;
                     categorySelector.appendChild(option);
                 });
 
@@ -117,47 +118,45 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Récupérer les messages depuis l'API
-    function fetchMessages() {
-        if (!messagesContainer) return;
+   function fetchMessages() {
+    if (!messagesContainer) return;
 
-        const categoryParam = currentCategoryId ? `?categorie=${currentCategoryId}` : '';
+    const categoryParam = currentCategoryId ? `?categorie=${currentCategoryId}` : '';
 
-        fetch(`http://192.168.65.113:20000/api/recuperation${categoryParam}`)
-            .then(response => {
-                if (!response.ok) throw new Error("Erreur lors de la récupération des messages.");
-                return response.json();
-            })
-            .then(data => {
-                messagesContainer.innerHTML = "";
-                if (Array.isArray(data)) {
-                    data.forEach(msg => {
-                        const messageElement = document.createElement("div");
-                        messageElement.classList.add("message");
-                        
-                        // Création des éléments DOM de manière sécurisée sans utiliser innerHTML
-                        const strongEl = document.createElement("strong");
-                        strongEl.textContent = `${escapeHtml(msg.nom)} ${escapeHtml(msg.prenom)}:`;
-                        
-                        const contentSpan = document.createElement("span");
-                        contentSpan.textContent = ` ${escapeHtml(msg.contenu)} `;
-                        
-                        const timeSpan = document.createElement("span");
-                        timeSpan.classList.add("time");
-                        timeSpan.textContent = escapeHtml(msg.heure);
-                        
-                        // Ajout des éléments au container du message
-                        messageElement.appendChild(strongEl);
-                        messageElement.appendChild(contentSpan);
-                        messageElement.appendChild(timeSpan);
-                        
-                        messagesContainer.appendChild(messageElement);
-                    });
-                }
-            })
-            .catch(error => {
-                console.error("Erreur lors de la récupération des messages:", error);
-            });
-    }
+    fetch(`http://192.168.65.113:20000/api/recuperation${categoryParam}`)
+        .then(response => {
+            if (!response.ok) throw new Error("Erreur lors de la récupération des messages.");
+            return response.json();
+        })
+        .then(data => {
+            messagesContainer.innerHTML = "";
+            if (Array.isArray(data)) {
+                data.forEach(msg => {
+                    const messageElement = document.createElement("div");
+                    messageElement.classList.add("message");
+
+                    const strong = document.createElement("strong");
+                    strong.textContent = `${msg.nom} ${msg.prenom}:`;
+
+                    const contenuText = document.createTextNode(` ${msg.contenu} `);
+
+                    const timeSpan = document.createElement("span");
+                    timeSpan.classList.add("time");
+                    timeSpan.textContent = msg.heure;
+
+                    messageElement.appendChild(strong);
+                    messageElement.appendChild(contenuText);
+                    messageElement.appendChild(timeSpan);
+
+                    messagesContainer.appendChild(messageElement);
+                });
+            }
+        })
+        .catch(error => {
+            console.error("Erreur lors de la récupération des messages:", error);
+        });
+}
+
 
     // Ajouter un message à l'interface
     function addMessage(content, isOwnMessage = false) {
@@ -165,8 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const messageDiv = document.createElement('div');
         messageDiv.classList.add(isOwnMessage ? 'own-message' : 'other-message');
-        // Protection XSS lors de l'affichage du contenu du message
-        messageDiv.textContent = escapeHtml(content);
+        messageDiv.textContent = content;
         messageDiv.style.opacity = '0'; // Commence invisible pour l'animation
         messagesContainer.appendChild(messageDiv);
 
@@ -298,7 +296,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (utilisateur) {
                     localStorage.setItem("userId", utilisateur.idutilisateur);
-                    alert(`Connexion réussie : Bienvenue ${escapeHtml(utilisateur.nom)} ${escapeHtml(utilisateur.prenom)} !`);
+                    alert(`Connexion réussie : Bienvenue ${utilisateur.nom} ${utilisateur.prenom} !`);
                 } else {
                     alert("Nom ou prénom incorrect.");
                 }
@@ -337,6 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => console.log("Réponse serveur LED:", data))
         .catch(error => console.error("Erreur LED:", error));
     }*/
+
 
     // Initialisation des écouteurs d'événements
     function initEventListeners() {
@@ -386,7 +385,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (greenButton) {
             greenButton.addEventListener("click", () => {
                 console.log("Bouton vert cliqué");
-                // toggleLED("green", true);
+                toggleLED("green", true);
             });
         }
 
@@ -394,7 +393,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (redButton) {
             redButton.addEventListener("click", () => {
                 console.log("Bouton rouge cliqué");
-                // toggleLED("red", true);
+                toggleLED("red", true);
             });
         }
 
@@ -402,7 +401,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (blueButton) {
             blueButton.addEventListener("click", () => {
                 console.log("Bouton bleu cliqué");
-                // toggleLED("blue", true);
+                toggleLED("blue", true);
             });
         }
 
@@ -414,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!span) return;
 
                 const color = span.textContent;
-                const message = `La ${escapeHtml(color)} est allumée`;
+                const message = `La ${color} est allumée`;
 
                 const chatContainer = document.getElementById('input-container');
                 if (!chatContainer) return;
@@ -450,8 +449,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         fetchUsers();
 
-        // Actualisation automatique - Réduire la fréquence pour éviter la surcharge
-        setInterval(refreshPageContent, 5000); // Modifié de 100ms à 5000ms (5 secondes)
+        // Actualisation automatique
+        setInterval(refreshPageContent, 100);
     }
 
     // Lancer l'initialisation
@@ -484,21 +483,25 @@ document.addEventListener('DOMContentLoaded', function () {
     function sendRequestToArduino(color) {
         const url = `${arduinoIP}/led/${color}`;
 
-        // Utilisation de fetch au lieu de XMLHttpRequest pour une meilleure gestion des erreurs
-        fetch(url)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`Erreur HTTP: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log(`LED ${color} allumée avec succès`);
-            })
-            .catch(error => {
-                console.error(`Erreur lors de la communication avec l'arduino: ${error.message}`);
-            });
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
 
-        console.log(`Requête envoyée pour allumer la LED ${color}: ${url}`);
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                console.log(`LED ${color} allumé avec succès`);
+            } else {
+                console.error(`Erreur lors de l'allumage de la LED : ${xhr.statusText}`);
+            }
+        };
+
+        xhr.onerror = function () {
+            console.error(`Erreur réseau lors de la communication avec l'arduino`);
+        };
+
+        xhr.send();
+
+        console.log(`Requête envoyée pour allumé la LED ${color}: ${url}`);
+    }
+    const addStopButton = () => {
     }
 });
