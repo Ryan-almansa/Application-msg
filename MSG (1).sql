@@ -20,7 +20,12 @@ SET time_zone = "+00:00";
 --
 -- Base de données : `MSG`
 --
-
+-- 2. Créer la table Categorie
+CREATE TABLE `Categorie` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `nom` varchar(100) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 -- --------------------------------------------------------
 
 --

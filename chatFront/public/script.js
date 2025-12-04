@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Récupérer les utilisateurs depuis l'API
     async function fetchUsers() {
         try {
-            const response = await fetch("http://192.168.65.113:20000/api/getutilisateur");
+            const response = await fetch("http://172.29.19.42:20000/api/getutilisateur");
             if (!response.ok) throw new Error("Erreur lors de la récupération des utilisateurs.");
             const data = await response.json();
             users = data.users;
@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!categorySelector) return;
 
         try {
-            const response = await fetch("http://192.168.65.113:20000/api/categories");
+            const response = await fetch("http://172.29.19.42:20000/api/categories");
             if (!response.ok) throw new Error("Erreur lors de la récupération des catégories.");
 
             const data = await response.json();
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch("http://192.168.65.113:20000/api/categories", {
+            const response = await fetch("http://172.29.19.42:20000/api/categories", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ nom: newCatName })
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const categoryParam = currentCategoryId ? `?categorie=${currentCategoryId}` : '';
 
-    fetch(`http://192.168.65.113:20000/api/recuperation${categoryParam}`)
+    fetch(`http://172.29.19.42:20000/api/recuperation${categoryParam}`)
         .then(response => {
             if (!response.ok) throw new Error("Erreur lors de la récupération des messages.");
             return response.json();
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 idCategorie: currentCategoryId || 1  // Utilise 1 comme catégorie par défaut
             };
 
-            const response = await fetch("http://192.168.65.113:20000/api/messages", {
+            const response = await fetch("http://172.29.19.42:20000/api/messages", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(requestBody)
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch("http://192.168.65.113:20000/api/addutilisateur", {
+            const response = await fetch("http://172.29.19.42:20000/api/addutilisateur", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ nom, prenom })
@@ -285,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            const response = await fetch("http://192.168.65.113:20000/api/getutilisateur");
+            const response = await fetch("http://172.29.19.42:20000/api/getutilisateur");
             const data = await response.json();
 
             if (response.ok && data.users) {

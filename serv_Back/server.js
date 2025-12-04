@@ -6,6 +6,9 @@ require('dotenv').config();
 
 const app = express();
 const port = 20000;
+// --- MODIFICATION ICI ---
+// On définit l'hôte explicitement
+const host = '172.29.19.42'; 
 
 app.use(express.json());
 app.use(cors());
@@ -24,28 +27,6 @@ bddConnection.connect(err => {
     }
     console.log("✅ Connexion réussie à la base de données");
 });
-  
-
-// ➤ API pour allumer ou éteindre les LEDs
-app.post('/api/red', async (req, res) => {
-    try{
-        await fetch('http://192.168.65.140/led/red');
-        res.json({success: isValid, message});
-    }
-    catch(err){
-        console.log("err")
-    }
-});
-
-
-
-
-
-
-
-
-
-
 
 // ➤ 🔒 Limiter l'ajout d'un utilisateur
 app.post('/api/addutilisateur', (req, res) => {
@@ -156,34 +137,29 @@ app.get('/api/recuperation', (req, res) => {
 // ➤ Récupérer toutes les catégories
 app.get('/api/categories', (req, res) => {
     const query = 'SELECT * FROM Categorie';
-    try{
-        bddConnection.query(query, (err, results) => {
-            if (err) {
-                console.error('Erreur SQL:\n', err)
-                return res.status(500).json({ error: err.message });
-            }
-            res.json({ categories: results });
-        });
-    } catch (err) {
-        console.error(err);
-    }
+    // --- MODIFICATION ICI ---                
+    // Suppression du try/catch inutile ici (bddConnection.query est asynchrone avec callback)
+    // La gestion d'erreur se fait dans le callback (if (err)).
+    bddConnection.query(query, (err, results) => {
+        if (err) {
+            console.error('Erreur SQL:\n', err)
+            return res.status(500).json({ error: err.message });
+        }
+        res.json({ categories: results });
+    });
 });
 
 // ➤ Récupérer une catégorie par ID
 app.get('/api/categories/:id', (req, res) => {
-    try{
-        const { id } = req.params;
+    // --- MODIFICATION ICI ---                
+    // Suppression du try/catch inutile.
+    const { id } = req.params;
     const query = 'SELECT * FROM Categorie WHERE idcategorie = ?';
     bddConnection.query(query, [id], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
         if (results.length === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
         res.json(results[0]);
     });
-    }catch(err)
-    {
-        console.error(err);
-    }
-    
 });
 
 // ➤ Ajouter une nouvelle catégorie
@@ -233,6 +209,8 @@ process.on('SIGINT', () => {
     });
 });
 
-app.listen(port, () => {
-    console.log(`🚀 Serveur démarré sur http://192.168.65.113:${port}`);
+// --- MODIFICATION ICI ---
+// On force le serveur à écouter UNIQUEMENT sur cette IP
+app.listen(port, host, () => {
+    console.log(`🚀 Serveur démarré de manière stricte sur http://${host}:${port}`);
 });
