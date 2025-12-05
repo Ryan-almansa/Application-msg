@@ -1,294 +1,340 @@
-@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&family=Liter&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-/* Styles généraux */
+/* Réinitialisation et Styles Généraux */
 body, html {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     height: 100%;
     font-family: 'Poppins', sans-serif;
-    background: #1e0046;
-    color: #fff;
+    background: #1e0046; /* Fond violet sombre conservé */
+    color: #f0f0f0; /* Texte blanc cassé pour la lisibilité */
+    overflow: hidden; 
 }
 
-/* Header */
-header {
-    background-color: rgba(0, 0, 0, 0.6);
-    padding: 1rem 5rem;
+/* Variables de Couleur pour la Cohérence */
+:root {
+    --primary-color: #7000cc; /* Violet principal */
+    --primary-hover: #5b00a5; /* Violet foncé pour le survol */
+    --dark-bg: #150030; /* Fond très sombre */
+    --card-bg: #2a0050; /* Fond des conteneurs */
+    --text-color: #f0f0f0;
 }
 
-/* header h1 {
-    font-size: 3rem;
-    font-weight: bold;
-    background: linear-gradient(90deg, red, orange, yellow, green, blue,green, yellow, orange, red);
-    background-size: 300%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientAnimation 5s infinite linear;
-}
-
-@keyframes gradientAnimation {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 100% 50%; }
-} */
-
-/* meme principe mais c'est sa transform */
-header h1 {
-    font-size: 3rem;
-    font-weight: bold;
-    color: #fff;
-    animation: scaleAnimation 3s infinite ease-in-out;
-    display: inline-block;
-}
-@keyframes scaleAnimation {
-    0%, 100% { transform: scale(1) rotate(0deg); }
-    50% { transform: scale(1.1) rotate(2deg); }
-}
-
-/* Conteneur principal */
 #app-container {
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    padding: 0;
 }
 
-/* Zone principale de chat */
+/* Header : Épuré et Minimaliste */
+header {
+    background-color: var(--dark-bg);
+    padding: 0.8rem 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--primary-color);
+}
+
+header h1 {
+    font-size: 2rem; /* Plus petit */
+    font-weight: 600;
+    color: var(--text-color);
+    animation: none; /* Supprime l'animation pour un look plus pro */
+    display: inline-block;
+}
+header i {
+    color: var(--primary-color);
+    margin-right: 0.5rem;
+}
+/* Supprime l'ancienne keyframe d'animation du header si elle existe */
+@keyframes scaleAnimation {
+    0%, 100% { transform: none; }
+    50% { transform: none; }
+}
+
+
+/* Contrôles de Catégorie : Propre et Aligné */
+#category-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem 2rem;
+    background: var(--card-bg); /* Nouveau fond pour cette barre */
+    flex-shrink: 0;
+}
+
+#category-selector, #new-category {
+    flex: 1;
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    border: 1px solid var(--primary-color);
+    background: #400075; /* Plus clair que le fond */
+    color: var(--text-color);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+#category-selector:focus, #new-category:focus {
+    border-color: var(--primary-hover);
+}
+
+/* Style de Bouton Uniforme et Moderne */
+#add-category, #send-button, #messageForm button[type="button"] { 
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-radius: 4px;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    flex-shrink: 0;
+}
+
+#add-category:hover, #send-button:hover, #messageForm button[type="button"]:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+
+/* Zone principale de chat (Prend l'espace restant) */
 #main-container {
     display: flex;
     flex: 1;
     gap: 1rem;
-    padding: 1rem;
+    padding: 1rem 2rem 0;
     overflow: hidden;
 }
 
-/* Zone de chat */
+/* Hauteurs recalculées pour le "One-Page" (Ajuster si nécessaire) */
+/* Hauteur totale occupée fixe estimée : ~220px (Header: 56px, Controls: 48px, 3 Barres du bas: ~116px) */
+:root {
+    --fixed-height-top: 56px;
+    --fixed-height-controls: 48px;
+    --fixed-height-bottom: 116px;
+    --total-fixed-height: 220px;
+}
+
+#chat-container, #users-container {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    height: calc(100vh - var(--total-fixed-height) - 1rem); /* 1rem de padding pour main-container */
+}
+
 #chat-container {
     flex: 3;
     display: flex;
     flex-direction: column;
-    background: rgba(0, 0, 0, 0.6);
-    border-radius: 12px;
-    padding: 1rem;
-    overflow-y: auto;
-    max-height: 500px; /* Ajuste selon ton besoin */
-    scroll-behavior: smooth;
 }
 
-/* Messages */
 #messages-container {
     flex-grow: 1;
-    overflow-y: auto;
+    overflow-y: auto; 
     padding-right: 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
-/* Scrollbar personnalisée */
-#messages-container::-webkit-scrollbar {
-    width: 8px;
-}
-
-#messages-container::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
-}
-
-/* Message Style */
+/* Style de message plus subtil */
 .message {
     background: rgba(255, 255, 255, 0.1);
-    padding: 8px 12px;
-    border-radius: 8px;
-    color: white;
+    padding: 10px 14px;
+    border-radius: 18px 18px 18px 4px; /* Coins arrondis modernes */
+    color: var(--text-color);
+    font-size: 0.9rem;
     width: fit-content;
-    max-width: 80%;
+    max-width: 70%;
 }
 
+.own-message {
+    background-color: var(--primary-color); /* Couleur primaire pour les messages de l'utilisateur */
+    align-self: flex-end;
+    border-radius: 18px 18px 4px 18px; 
+}
 
 /* Zone des utilisateurs */
 #users-container {
-    width: 17rem;
-    background: rgba(0, 0, 0, 0.6);
-    padding: 1rem;
-    border-radius: 8px;
+    width: 250px;
+    min-width: 200px;
     overflow-y: auto;
-    max-height: 300px;  /* Définir une hauteur maximale pour le conteneur */
 }
-
-#users-container i{
-    padding-right: 0.5rem;
-}
-
-i{
-    color: #7000cc;
-}
-
 #users-container h2 {
-    margin-top: 0;
-    color: #fff;
-    font-size: 1.2rem;
+    color: var(--text-color);
+    font-size: 1.1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+#users-container i{ color: var(--primary-color); }
+#user-list li { border-bottom: none; padding: 0.4rem 0; font-size: 0.95rem; }
 
-#user-list {
-    list-style-type: none;
-    padding: 0;
-    margin: 0;
-}
 
-#user-list li {
-    color: #fff;
-    font-size: 1rem;
-    border-bottom: 1px solid #ffffff30;
-    padding: 0.5rem 0;
-}
+/* --- BARRES D'ACTION FIXES DU BAS --- */
 
-/* Zone d'entrée de message */
+/* 3. Input-Container : La barre de message (Nouveau style) */
 #input-container {
     display: flex;
     align-items: center;
-    padding: 1rem;
-    border-top: 2px solid #ffffff30;
+    padding: 0.6rem 2rem; /* Hauteur plus compacte */
+    position: fixed;
+    bottom: 86px; /* Ajusté par rapport à messageForm */
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--dark-bg); /* Fond sombre */
+    border-top: 1px solid var(--primary-color);
+    z-index: 90;
+    flex-shrink: 0;
 }
-#input-container input[type="text"] {
-    outline: none;
-    background: #ffffff00;
-    font-family: poppins, sans-serif;
-    border: 2px solid #7000cc;
-
-}
-#input-container input[type="text"]:focus {
-    border: 2px solid #5b00a5;
-    transition: ease 0.3s;
-}
-
 
 #message-input {
     flex: 1;
-    padding: 0.6rem;
-    border-radius: 5px;
-    background: #333;
-    color: #fff;
-    font-size: 0.9rem;
-}
-
-
-#send-button, #messageForm button[type="submit"]  {
-    padding: 0.6rem 1rem;
-    margin-left: 0.8rem;
-    background-color: #7000cc;
-    color: #fff;
-    border-radius: 5px;
+    padding: 0.7rem 1rem;
+    border-radius: 20px; /* Très arrondi */
+    background: #400075; 
+    color: var(--text-color);
+    font-size: 1rem;
+    outline: none;
     border: none;
-    cursor: pointer;
-    font-family: poppins, sans-serif;
-    transition: background-color 0.3s ease;
+    margin-right: 0.8rem;
+    transition: background-color 0.2s ease;
+}
+#message-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+#message-input:focus {
+    background: #500090;
 }
 
-#send-button:hover {
-    background-color: #5b00a5;
+#send-button {
+    padding: 0.7rem 1.2rem;
+    border-radius: 20px; /* Très arrondi */
+    margin-left: 0;
+    font-weight: 600;
 }
 
 
-
-/* Messages envoyés */
-.own-message {
-    background-color: #0066cc;
-    color: #fff;
-    padding: 0.5rem;
-    border-radius: 10px;
-    max-width: 80%;
-    align-self: flex-end;
+/* 2. MessageForm (Barre Nom/Prénom/Boutons) */
+#messageForm {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end; /* Alignement à droite par défaut */
+    gap: 1.5rem;
+    padding: 0.6rem 2rem;
+    background-color: var(--dark-bg);
+    position: fixed;
+    bottom: 30px; 
+    width: 100%;
+    box-sizing: border-box;
+    z-index: 95;
+    border-top: 1px solid var(--dark-bg); /* Cache le border-top, on utilise juste le fond sombre */
+    border-bottom: 1px solid var(--primary-color);
+    flex-shrink: 0;
 }
 
-.other-message {
-    background-color: #2a75bbb2;
-    color: #fff;
-    padding: 0.5rem;
-    border-radius: 10px;
-    max-width: 80%;
-    align-self: flex-start;
-}
-
-#messageForm{
-    padding: 1rem;
-}
-#messageInput input[type="text"] {
-    font-family: poppins, sans-serif;
+#messageForm label {
+    font-size: 0.9rem;
+    color: var(--text-color);
+    font-weight: 300;
 }
 
 #messageForm input[type="text"] {
-    padding: 0.3rem;
-    margin-right: 1rem;
-    margin-left: 0.2rem;
-    border: none;
-    border-radius: 3px;
-    font-family: poppins, sans-serif;
-    background-color: #ffffff00;
+    width: 120px; 
+    padding: 0.4rem;
+    border-radius: 4px;
+    background-color: #400075; 
     color: #fff;
-    border: #7000cc solid 2px;
-
-}
-#messageForm input[type="text"]:focus {
-    outline: none;
-    border: #5b00a5 solid 2px;
-    transition: ease 0.1s;
+    border: 1px solid var(--primary-color);
+    font-size: 0.9rem;
 }
 
-
-/* Footer */
+/* 1. Footer */
 footer {
-    background-color: rgba(0, 0, 0, 0.6);
+    background-color: var(--dark-bg);
     text-align: center;
-    padding: 0.25rem;
-    font-size: 0.75rem;
-    color: #fff;
-    position: relative;
+    padding: 0;
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    position: fixed; 
     bottom: 0;
     width: 100%;
+    z-index: 100;
+    height: 30px; 
+    line-height: 30px; 
 }
 
-/******bouton***/
-.container {
-    text-align: center;
+/* Media Queries pour le Responsive (Ajusté pour le nouveau design) */
+@media (max-width: 900px) {
+    /* Le défilement est permis sur mobile si le contenu est trop grand */
+    body {
+        overflow-y: auto; 
+    }
 
-}
+    header, #main-container, #category-controls, #input-container, #messageForm {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
 
-button {
-    padding: 20px 40px;
-    font-size: 18px;
-    cursor: pointer;
-    border: none;
-    border-radius: 50px;
-    background: linear-gradient(45deg, #ffffff00, #ffffff00);
-    color: white;
-    font-weight: bold;
-    text-transform: uppercase;
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s ease, box-shadow 0.3s ease, background-color 0.3s ease;
-}
+    #main-container {
+        flex-direction: column;
+        padding-top: 0.5rem;
+    }
+    
+    /* Hauteurs dynamiques mobiles */
+    #chat-container, #users-container {
+        height: auto;
+        min-height: 40vh; /* Garde une hauteur raisonnable */
+    }
 
-button:hover {
-    background: linear-gradient(45deg, #3f3e3e, #fdfdfd9a);
-    transform: scale(1.1);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
+    /* Le footer est masqué */
+    footer {
+        display: none; 
+    }
+    
+    /* La barre de message */
+    #input-container {
+        bottom: 120px; /* Au-dessus de messageForm mobile */
+        padding: 0.8rem 1rem;
+        border-bottom: 1px solid var(--primary-color); /* Séparateur */
+    }
+    
+    /* La barre d'action Nom/Prénom/Boutons */
+    #messageForm {
+        flex-direction: column;
+        align-items: stretch;
+        bottom: 0;
+        gap: 0.5rem;
+        padding: 0.8rem 1rem;
+    }
 
-button:focus {
-    outline: none;
-}
+    #messageForm > *:not(button) {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    #messageForm label {
+        display: none;
+    }
+    
+    #messageForm input[type="text"] {
+        flex: 1;
+        margin-right: 0.5rem;
+    }
+    
+    #messageForm button[type="button"] {
+        flex: 1;
+        margin: 0 0.2rem;
+        padding: 0.6rem;
+    }
 
-span.Rouge {
-    color: #f00;
-}
-span.Vert {
-    color: rgb(0, 255, 106);
-}
-
-span.Bleu {
-    color: rgb(25, 0, 255);
-}
-
-element.style {
-    padding: 8px;
-    margin: 4px 0px;
-    border-radius: 5px;
+    /* Rendre le conteneur des inputs Nom/Prénom plus compact */
+    #messageForm > div {
+        display: flex;
+        gap: 0.5rem;
+        width: 100%;
+    }
 }
