@@ -1,2 +1,4 @@
 /serv_Back/node_modules
 /serv_Back/.env
+package-lock.json
+package.json
