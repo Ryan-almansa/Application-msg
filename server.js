@@ -1,260 +1,120 @@
 const express = require('express');
 const mysql = require('mysql');
 const cors = require('cors');
-const axios = require('axios');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 const port = 20000;
-// --- MODIFICATION ICI ---
-// On définit l'hôte explicitement
-const host = '172.29.19.42'; 
+const host = '0.0.0.0'; 
 
 app.use(express.json());
 app.use(cors());
 
+// Servir les fichiers du dossier public
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
+// Connexion BDD
 const bddConnection = mysql.createConnection({
-    host: process.env.DB_HOST,  
-    database: process.env.DB_NAME,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS
+    host: process.env.DB_HOST || 'localhost',
+    database: process.env.DB_NAME || 'Speaky', // Vérifie que c'est bien le nom dans phpMyAdmin
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASS || ''
 });
 
 bddConnection.connect(err => {
-    if (err) {
-        console.error('Erreur de connexion à la base de données:', err.message);
-        return;
-    }
-    console.log("✅ Connexion réussie à la base de données");
+    if (err) console.error('❌ Erreur SQL:', err.message);
+    else console.log("✅ Connecté à MySQL");
 });
 
-// --------------------------------------------------------
-// 🧑‍💻 ROUTES UTILISATEUR
-// --------------------------------------------------------
+// --- API ROUTES ---
 
-// ➤ 🔒 Limiter l'ajout d'un utilisateur
+// 1. Inscription
 app.post('/api/addutilisateur', (req, res) => {
     const { nom, prenom } = req.body;
-
-    if (!nom || !prenom) {
-        return res.status(400).json({ error: "Nom et prénom sont requis." });
-    }
-
-    // [AMÉLIORATION] Combinaison des requêtes de vérification
-    const checkQuery = "SELECT idutilisateur FROM utilisateur WHERE nom = ? AND prenom = ?";
-    bddConnection.query(checkQuery, [nom, prenom], (err, users) => {
+    const check = "SELECT idutilisateur FROM utilisateur WHERE nom = ? AND prenom = ?";
+    bddConnection.query(check, [nom, prenom], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
+        if (result.length > 0) return res.status(409).json({ error: "Utilisateur existe déjà" });
 
-        if (users.length > 0) {
-            return res.status(409).json({ error: "Utilisateur déjà existant." });
-        }
-
-        // Ajouter l'utilisateur
-        const countQuery = "SELECT COUNT(*) AS count FROM utilisateur";
-        bddConnection.query(countQuery, (err, result) => {
+        const insert = "INSERT INTO utilisateur (nom, prenom) VALUES (?, ?)";
+        bddConnection.query(insert, [nom, prenom], (err, r) => {
             if (err) return res.status(500).json({ error: err.message });
-
-            if (result[0].count >= 100) {
-                return res.status(403).json({ error: "Limite d'utilisateurs atteinte." });
-            }
-
-            const insertQuery = "INSERT INTO utilisateur (nom, prenom) VALUES (?, ?)";
-            bddConnection.query(insertQuery, [nom, prenom], (err, result) => {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ message: "Utilisateur ajouté avec succès", id: result.insertId });
-            });
+            res.json({ message: "Succès", id: r.insertId });
         });
     });
 });
 
-// ➤ 2️⃣ Récupérer la liste des utilisateurs
+// 2. Connexion (Récupération liste pour check)
 app.get('/api/getutilisateur', (req, res) => {
-    // [AMÉLIORATION] Sélectionner uniquement les champs nécessaires et conserver l'ID
-    bddConnection.query("SELECT idutilisateur, nom, prenom FROM utilisateur", (err, results) => {
+    bddConnection.query("SELECT * FROM utilisateur", (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
-
-        res.json({ users: results }); // Le mapping n'est plus nécessaire ici
+        res.json({ users: results });
     });
 });
 
-
-// ➤ 🔒 Ajouter un message
+// 3. ENVOI DE MESSAGE (La correction est ici)
 app.post('/api/messages', (req, res) => {
-    const { contenu, idutilisateur } = req.body;
-    // [RAPPEL NOM FK] Utiliser 'id' comme nom de colonne dans la BD
-    const id = req.body.idCategorie || 1; // On récupère toujours du body 'idCategorie', mais on utilise 'id' pour la BD.
+    console.log("📥 Reçu:", req.body); // Pour voir ce qui arrive
+    const { contenu, idutilisateur, idCategorie } = req.body;
+    
+    // Sécurité : on force 1 si pas de catégorie, mais normalement le front l'envoie
+    const catId = idCategorie || 1; 
 
     if (!contenu || !idutilisateur) {
-        return res.status(400).json({ error: "Contenu et id utilisateur sont requis" });
+        return res.status(400).json({ error: "Données manquantes (contenu ou user)" });
     }
 
-    // Vérification de l'existence de l'utilisateur (robustesse)
-    const checkUserQuery = "SELECT idutilisateur FROM utilisateur WHERE idutilisateur = ?";
-    bddConnection.query(checkUserQuery, [idutilisateur], (err, userResult) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (userResult.length === 0) {
-            return res.status(404).json({ error: "Utilisateur non trouvé." });
-        }
-
-        // Vérification de la limite de messages
-        const checkRateLimit = `
-            SELECT COUNT(*) AS count 
-            FROM message 
-            WHERE idutilisateur = ? 
-            AND id = ?  <-- UTILISATION DE id
-            AND CONCAT(date, ' ', heure) > SUBTIME(NOW(), '00:01:00')
-        `;
-
-        // [CORRECTION] Utilisation de id dans la requête de limite de débit
-        bddConnection.query(checkRateLimit, [idutilisateur, id], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-
-            if (result[0].count >= 5) {
-                return res.status(429).json({ error: "Trop de messages envoyés, veuillez attendre 60 secondes." });
-            }
-
-            // Insertion avec id explicite
-            // [CORRECTION] Utilisation de id dans la requête d'insertion
-            const query = "INSERT INTO message (contenu, idutilisateur, date, heure, id) VALUES (?, ?, CURDATE(), CURTIME(), ?)";
-            
-            bddConnection.query(query, [contenu, idutilisateur, id], (err, result) => {
-                if (err) return res.status(500).json({ error: err.message });
-                res.json({ message: "Message envoyé avec succès", id: result.insertId });
-            });
-        });
-    });
-});
-
-// ➤ Récupérer les messages (tous ou par catégorie)
-app.get('/api/recuperation', (req, res) => {
-    const id = req.query.categorie || 1; // [CORRECTION] Utilisation de id
+    // IMPORTANT : idcategorie (sans underscore)
+    const query = "INSERT INTO message (contenu, idutilisateur, date, heure, idcategorie) VALUES (?, ?, CURDATE(), CURTIME(), ?)";
     
-    const query = `
-        SELECT message.id, message.contenu, message.date, message.heure, 
-               utilisateur.nom, utilisateur.prenom 
-        FROM message 
-        JOIN utilisateur ON message.idutilisateur = utilisateur.idutilisateur
-        WHERE message.id = ?  <-- UTILISATION DE id
-        ORDER BY message.date DESC, message.heure DESC
-    `;
-
-    // [CORRECTION] Utilisation de id dans les paramètres
-    bddConnection.query(query, [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
-// ➤ Récupérer les messages (tous ou par catégorie)
-app.get('/api/recuperation', (req, res) => {
-    const idcategorie = req.query.categorie || 1; // [CORRECTION] Utilisation de id_categorie
-    
-    const query = `
-        SELECT message.id, message.contenu, message.date, message.heure, 
-               utilisateur.nom, utilisateur.prenom 
-        FROM message 
-        JOIN utilisateur ON message.idutilisateur = utilisateur.idutilisateur
-        WHERE message.id_categorie = ?
-        ORDER BY message.date DESC, message.heure DESC
-    `;
-
-    // [CORRECTION] Utilisation de id_categorie dans les paramètres
-    bddConnection.query(query, [idcategorie], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(results);
-    });
-});
-
-
-
-// --------------------------------------------------------
-// 🏷️ ROUTES CATÉGORIE
-// --------------------------------------------------------
-
-// ➤ Récupérer toutes les catégories
-app.get('/api/categories', (req, res) => {
-    // [COHÉRENCE] Table 'Categorie' avec C majuscule (conforme à votre image)
-    const query = 'SELECT idCategorie, nom FROM Categorie'; 
-    bddConnection.query(query, (err, results) => {
+    bddConnection.query(query, [contenu, idutilisateur, catId], (err, result) => {
         if (err) {
-            console.error('Erreur SQL:\n', err)
+            console.error("❌ Erreur Insert Message:", err.message);
             return res.status(500).json({ error: err.message });
         }
+        console.log("✅ Message enregistré, ID:", result.insertId);
+        res.json({ message: "Envoyé", id: result.insertId });
+    });
+});
+
+// 4. RÉCUPÉRATION DES MESSAGES (Correction ici aussi)
+app.get('/api/recuperation', (req, res) => {
+    const idCat = req.query.categorie || 1;
+    
+    // IMPORTANT : m.idcategorie (sans underscore)
+    const query = `
+        SELECT m.id, m.contenu, m.heure, m.date, u.nom, u.prenom 
+        FROM message m
+        JOIN utilisateur u ON m.idutilisateur = u.idutilisateur
+        WHERE m.idcategorie = ?
+        ORDER BY m.date ASC, m.heure ASC
+    `;
+    // Note : J'ai mis ASC (Ascendant) pour avoir les messages du plus vieux au plus récent (conversation logique)
+    
+    bddConnection.query(query, [idCat], (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(results);
+    });
+});
+
+// 5. Catégories
+app.get('/api/categories', (req, res) => {
+    bddConnection.query('SELECT * FROM Categorie', (err, results) => {
+        if (err) return res.status(500).json({ error: err.message });
         res.json({ categories: results });
     });
 });
 
-// ➤ Récupérer une catégorie par ID
-app.get('/api/categories/:id', (req, res) => {
-    const { id } = req.params;
-    // [CORRECTION/COHÉRENCE] La colonne ID est souvent 'idCategorie' ou 'id_categorie'. 
-    // J'utilise le nom 'idCategorie' avec C majuscule ici, si ça ne marche pas,
-    // c'est que la colonne dans la table Categorie est en minuscules (idcategorie) ou 'id_categorie'.
-    const query = 'SELECT * FROM Categorie WHERE idCategorie = ?'; 
-    bddConnection.query(query, [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (results.length === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
-        res.json(results[0]);
-    });
-});
-
-// ➤ Ajouter une nouvelle catégorie
 app.post('/api/categories', (req, res) => {
     const { nom } = req.body;
-    if (!nom) return res.status(400).json({ error: 'Le nom de la catégorie est requis.' });
-    
-    // [AMÉLIORATION] Vérifier si le nom existe déjà avant d'insérer
-    bddConnection.query('SELECT nom FROM Categorie WHERE nom = ?', [nom], (err, results) => {
+    bddConnection.query('INSERT INTO Categorie (nom) VALUES (?)', [nom], (err, result) => {
         if (err) return res.status(500).json({ error: err.message });
-        if (results.length > 0) {
-            return res.status(409).json({ error: "Cette catégorie existe déjà." });
-        }
-
-        const query = 'INSERT INTO Categorie (nom) VALUES (?)';
-        bddConnection.query(query, [nom], (err, result) => {
-            if (err) return res.status(500).json({ error: err.message });
-            res.json({ id: result.insertId, nom });
-        });
+        res.json({ id: result.insertId, nom });
     });
 });
 
-// ➤ Mettre à jour une catégorie
-app.put('/api/categories/:id', (req, res) => {
-    const { id } = req.params;
-    const { nom } = req.body;
-    if (!nom) return res.status(400).json({ error: 'Le nom de la catégorie est requis.' });
-    
-    // [CORRECTION/COHÉRENCE] Utilisation de 'idCategorie'
-    const query = 'UPDATE Categorie SET nom = ? WHERE idCategorie = ?'; 
-    bddConnection.query(query, [nom, id], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
-        res.json({ message: 'Catégorie mise à jour avec succès' });
-    });
-});
-
-// ➤ Supprimer une catégorie
-app.delete('/api/categories/:id', (req, res) => {
-    const { id } = req.params;
-    
-    // [CORRECTION/COHÉRENCE] Utilisation de 'idCategorie'
-    const query = 'DELETE FROM Categorie WHERE idCategorie = ?';
-    bddConnection.query(query, [id], (err, result) => {
-        if (err) return res.status(500).json({ error: err.message });
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Catégorie non trouvée' });
-        res.json({ message: 'Catégorie supprimée avec succès' });
-    });
-});
-
-// Gestion de la fermeture propre
-process.on('SIGINT', () => {
-    bddConnection.end(err => {
-        if (err) console.error('Erreur lors de la fermeture de la connexion :', err.message);
-        else console.log('🛑 Connexion à la base de données fermée.');
-        process.exit();
-    });
-});
-
-// On force le serveur à écouter UNIQUEMENT sur cette IP
 app.listen(port, host, () => {
-    console.log(`🚀 Serveur démarré de manière stricte sur http://${host}:${port}`);
+    console.log(`🚀 Serveur lancé sur http://localhost:${port}`);
 });

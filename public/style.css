@@ -1,340 +1,263 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
-/* Réinitialisation et Styles Généraux */
+/* --- 1. CONFIGURATION GÉNÉRALE & COULEURS SOBRES --- */
+:root {
+    /* Nouvelle palette : Plus sobre, moins "néon" */
+    --primary-color: #5e35b1;      /* Violet "Royal" plus doux */
+    --primary-hover: #4527a0;      /* Plus foncé au survol */
+    
+    --dark-bg: #0f0a1a;            /* Fond quasi noir, très légèrement violet */
+    --card-bg: #1f1435;            /* Fond des conteneurs (Aubergine sombre) */
+    --input-bg: #2d1f4b;           /* Fond des champs de saisie */
+    
+    --text-color: #e6e6e6;         /* Blanc cassé doux */
+    --border-color: rgba(94, 53, 177, 0.3); /* Bordures subtiles */
+}
+
 body, html {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
     height: 100%;
     font-family: 'Poppins', sans-serif;
-    background: #1e0046; /* Fond violet sombre conservé */
-    color: #f0f0f0; /* Texte blanc cassé pour la lisibilité */
-    overflow: hidden; 
+    background: var(--dark-bg);
+    color: var(--text-color);
+    overflow: hidden; /* Important : empêche la page entière de scroller */
 }
 
-/* Variables de Couleur pour la Cohérence */
-:root {
-    --primary-color: #7000cc; /* Violet principal */
-    --primary-hover: #5b00a5; /* Violet foncé pour le survol */
-    --dark-bg: #150030; /* Fond très sombre */
-    --card-bg: #2a0050; /* Fond des conteneurs */
-    --text-color: #f0f0f0;
-}
-
+/* --- 2. STRUCTURE FLEXBOX (LA CORRECTION) --- */
 #app-container {
     display: flex;
-    flex-direction: column;
-    height: 100vh;
-    padding: 0;
+    flex-direction: column; /* Tout s'empile verticalement */
+    height: 100vh;          /* Prend 100% de la hauteur de l'écran */
+    width: 100%;
+    overflow: hidden;
 }
 
-/* Header : Épuré et Minimaliste */
+/* --- 3. HEADER --- */
 header {
-    background-color: var(--dark-bg);
+    background-color: var(--card-bg);
     padding: 0.8rem 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--primary-color);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    flex-shrink: 0; /* Ne rétrécit jamais */
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }
 
 header h1 {
-    font-size: 2rem; /* Plus petit */
+    font-size: 1.5rem;
     font-weight: 600;
+    margin: 0;
     color: var(--text-color);
-    animation: none; /* Supprime l'animation pour un look plus pro */
-    display: inline-block;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
+
 header i {
     color: var(--primary-color);
-    margin-right: 0.5rem;
-}
-/* Supprime l'ancienne keyframe d'animation du header si elle existe */
-@keyframes scaleAnimation {
-    0%, 100% { transform: none; }
-    50% { transform: none; }
 }
 
-
-/* Contrôles de Catégorie : Propre et Aligné */
+/* --- 4. CONTRÔLES DE CATÉGORIE --- */
 #category-controls {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    padding: 0.8rem 2rem;
-    background: var(--card-bg); /* Nouveau fond pour cette barre */
+    gap: 10px;
+    padding: 10px 20px;
+    background: var(--dark-bg);
     flex-shrink: 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 #category-selector, #new-category {
     flex: 1;
-    padding: 0.5rem 0.8rem;
-    border-radius: 4px;
-    border: 1px solid var(--primary-color);
-    background: #400075; /* Plus clair que le fond */
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background: var(--input-bg);
     color: var(--text-color);
     font-size: 0.9rem;
     outline: none;
-    transition: border-color 0.2s ease;
-}
-#category-selector:focus, #new-category:focus {
-    border-color: var(--primary-hover);
 }
 
-/* Style de Bouton Uniforme et Moderne */
-#add-category, #send-button, #messageForm button[type="button"] { 
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    border-radius: 4px;
-    background: var(--primary-color);
-    color: white;
-    font-weight: 500;
-    cursor: pointer;
-    border: none;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-    flex-shrink: 0;
-}
-
-#add-category:hover, #send-button:hover, #messageForm button[type="button"]:hover {
-    background: var(--primary-hover);
-    transform: translateY(-1px);
-}
-
-
-/* Zone principale de chat (Prend l'espace restant) */
+/* --- 5. ZONE PRINCIPALE (CHAT) --- */
+/* C'est ici que la magie opère : flex: 1 permet de prendre tout l'espace libre */
 #main-container {
+    flex: 1; 
     display: flex;
-    flex: 1;
     gap: 1rem;
-    padding: 1rem 2rem 0;
-    overflow: hidden;
-}
-
-/* Hauteurs recalculées pour le "One-Page" (Ajuster si nécessaire) */
-/* Hauteur totale occupée fixe estimée : ~220px (Header: 56px, Controls: 48px, 3 Barres du bas: ~116px) */
-:root {
-    --fixed-height-top: 56px;
-    --fixed-height-controls: 48px;
-    --fixed-height-bottom: 116px;
-    --total-fixed-height: 220px;
-}
-
-#chat-container, #users-container {
-    background: var(--card-bg);
-    border-radius: 8px;
     padding: 1rem;
-    height: calc(100vh - var(--total-fixed-height) - 1rem); /* 1rem de padding pour main-container */
+    overflow: hidden; /* Empêche le dépassement global */
+    position: relative;
 }
 
 #chat-container {
-    flex: 3;
+    flex: 3; /* Le chat prend 3x plus de place que la liste users */
     display: flex;
     flex-direction: column;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1rem;
+    overflow: hidden; /* Garde les messages DANS la boite */
+    border: 1px solid var(--border-color);
 }
 
 #messages-container {
-    flex-grow: 1;
-    overflow-y: auto; 
+    flex-grow: 1; /* Prend toute la hauteur dispo dans la boite chat */
+    overflow-y: auto; /* Scroll uniquement ici */
     padding-right: 10px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
 }
 
-/* Style de message plus subtil */
+/* Scrollbar personnalisée plus discrète */
+#messages-container::-webkit-scrollbar { width: 6px; }
+#messages-container::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 3px; }
+#messages-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+
+/* --- 6. STYLE DES MESSAGES --- */
 .message {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 10px 14px;
-    border-radius: 18px 18px 18px 4px; /* Coins arrondis modernes */
+    background: rgba(255, 255, 255, 0.05);
+    padding: 10px 16px;
+    border-radius: 12px 12px 12px 2px;
     color: var(--text-color);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     width: fit-content;
-    max-width: 70%;
+    max-width: 75%;
+    line-height: 1.4;
 }
 
-.own-message {
-    background-color: var(--primary-color); /* Couleur primaire pour les messages de l'utilisateur */
-    align-self: flex-end;
-    border-radius: 18px 18px 4px 18px; 
+/* Style spécifique pour mes messages (aligné à droite via JS, couleur ici) */
+.own-message { 
+    /* Géré par le JS, mais on peut forcer le style ici si besoin */
+    background-color: #311b92; /* Un violet très foncé */
 }
 
-/* Zone des utilisateurs */
+/* --- 7. ZONE UTILISATEURS --- */
 #users-container {
-    width: 250px;
-    min-width: 200px;
+    flex: 1;
+    max-width: 250px;
+    min-width: 180px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1rem;
     overflow-y: auto;
+    border: 1px solid var(--border-color);
+    display: none; /* Masqué sur mobile par défaut, affiché sur desktop */
 }
+
+@media (min-width: 768px) {
+    #users-container { display: block; }
+}
+
 #users-container h2 {
-    color: var(--text-color);
-    font-size: 1.1rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 1rem;
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--primary-color);
 }
-#users-container i{ color: var(--primary-color); }
-#user-list li { border-bottom: none; padding: 0.4rem 0; font-size: 0.95rem; }
+#user-list { list-style: none; padding: 0; }
+#user-list li { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
 
+/* --- 8. BARRES DU BAS (Input & Form) --- */
+/* On retire les positions fixed pour qu'elles s'empilent */
 
-/* --- BARRES D'ACTION FIXES DU BAS --- */
-
-/* 3. Input-Container : La barre de message (Nouveau style) */
 #input-container {
+    background: var(--card-bg);
+    padding: 15px 20px;
     display: flex;
     align-items: center;
-    padding: 0.6rem 2rem; /* Hauteur plus compacte */
-    position: fixed;
-    bottom: 86px; /* Ajusté par rapport à messageForm */
-    width: 100%;
-    box-sizing: border-box;
-    background: var(--dark-bg); /* Fond sombre */
-    border-top: 1px solid var(--primary-color);
-    z-index: 90;
-    flex-shrink: 0;
+    border-top: 1px solid var(--border-color);
+    flex-shrink: 0; /* Ne s'écrase pas */
+    z-index: 10;
 }
 
 #message-input {
     flex: 1;
-    padding: 0.7rem 1rem;
-    border-radius: 20px; /* Très arrondi */
-    background: #400075; 
-    color: var(--text-color);
+    padding: 12px 20px;
+    border-radius: 30px;
+    background: var(--input-bg);
+    border: 1px solid transparent;
+    color: white;
     font-size: 1rem;
     outline: none;
-    border: none;
-    margin-right: 0.8rem;
-    transition: background-color 0.2s ease;
+    transition: border 0.3s;
 }
-#message-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-}
+
 #message-input:focus {
-    background: #500090;
+    border-color: var(--primary-color);
 }
 
-#send-button {
-    padding: 0.7rem 1.2rem;
-    border-radius: 20px; /* Très arrondi */
-    margin-left: 0;
+/* Boutons génériques */
+button {
+    padding: 10px 20px;
+    border-radius: 30px;
+    border: none;
+    background: var(--primary-color);
+    color: white;
     font-weight: 600;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: background 0.3s;
+    font-size: 0.9rem;
 }
 
+button:hover {
+    background: var(--primary-hover);
+}
 
-/* 2. MessageForm (Barre Nom/Prénom/Boutons) */
 #messageForm {
+    background: var(--dark-bg);
+    padding: 10px 20px;
     display: flex;
     align-items: center;
-    justify-content: flex-end; /* Alignement à droite par défaut */
-    gap: 1.5rem;
-    padding: 0.6rem 2rem;
-    background-color: var(--dark-bg);
-    position: fixed;
-    bottom: 30px; 
-    width: 100%;
-    box-sizing: border-box;
-    z-index: 95;
-    border-top: 1px solid var(--dark-bg); /* Cache le border-top, on utilise juste le fond sombre */
-    border-bottom: 1px solid var(--primary-color);
+    justify-content: center;
+    gap: 10px;
     flex-shrink: 0;
+    border-top: 1px solid rgba(255,255,255,0.05);
 }
 
-#messageForm label {
-    font-size: 0.9rem;
-    color: var(--text-color);
-    font-weight: 300;
+#messageForm input {
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    border-radius: 6px;
+    color: white;
+    width: 120px;
 }
 
-#messageForm input[type="text"] {
-    width: 120px; 
-    padding: 0.4rem;
-    border-radius: 4px;
-    background-color: #400075; 
-    color: #fff;
-    border: 1px solid var(--primary-color);
-    font-size: 0.9rem;
-}
-
-/* 1. Footer */
+/* --- 9. FOOTER --- */
 footer {
     background-color: var(--dark-bg);
     text-align: center;
-    padding: 0;
-    font-size: 0.7rem;
-    color: rgba(255, 255, 255, 0.5);
-    position: fixed; 
-    bottom: 0;
-    width: 100%;
-    z-index: 100;
-    height: 30px; 
-    line-height: 30px; 
+    padding: 8px 0;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
 }
 
-/* Media Queries pour le Responsive (Ajusté pour le nouveau design) */
-@media (max-width: 900px) {
-    /* Le défilement est permis sur mobile si le contenu est trop grand */
-    body {
-        overflow-y: auto; 
-    }
-
-    header, #main-container, #category-controls, #input-container, #messageForm {
-        padding-left: 1rem;
-        padding-right: 1rem;
-    }
-
+/* --- 10. RESPONSIVE (MOBILE) --- */
+@media (max-width: 768px) {
     #main-container {
-        flex-direction: column;
-        padding-top: 0.5rem;
+        padding: 0.5rem;
     }
     
-    /* Hauteurs dynamiques mobiles */
-    #chat-container, #users-container {
-        height: auto;
-        min-height: 40vh; /* Garde une hauteur raisonnable */
+    #input-container {
+        padding: 10px;
     }
 
-    /* Le footer est masqué */
-    footer {
-        display: none; 
-    }
-    
-    /* La barre de message */
-    #input-container {
-        bottom: 120px; /* Au-dessus de messageForm mobile */
-        padding: 0.8rem 1rem;
-        border-bottom: 1px solid var(--primary-color); /* Séparateur */
-    }
-    
-    /* La barre d'action Nom/Prénom/Boutons */
     #messageForm {
         flex-direction: column;
-        align-items: stretch;
-        bottom: 0;
-        gap: 0.5rem;
-        padding: 0.8rem 1rem;
-    }
-
-    #messageForm > *:not(button) {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
+        gap: 8px;
+        padding-bottom: 20px;
     }
     
-    #messageForm label {
-        display: none;
-    }
+    #messageForm input { width: 100%; }
+    #messageForm button { width: 100%; margin: 0; }
     
-    #messageForm input[type="text"] {
-        flex: 1;
-        margin-right: 0.5rem;
-    }
-    
-    #messageForm button[type="button"] {
-        flex: 1;
-        margin: 0 0.2rem;
-        padding: 0.6rem;
-    }
-
-    /* Rendre le conteneur des inputs Nom/Prénom plus compact */
-    #messageForm > div {
-        display: flex;
-        gap: 0.5rem;
-        width: 100%;
-    }
+    footer { display: none; } /* On cache le footer sur mobile pour gagner de la place */
 }
