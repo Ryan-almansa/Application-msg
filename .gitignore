@@ -1,4 +1,10 @@
-/serv_Back/node_modules
-/serv_Back/.env
+/node_modules
+.env
+/dist
+.DS_Store
+/build
+/logs
+*.log
+settings.json
 package-lock.json
 package.json
