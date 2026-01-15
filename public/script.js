@@ -1,232 +1,237 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("✅ Script chargé. Mode Auto-Scroll activé.");
+    console.log("✅ Script Secure chargé.");
+    const API_URL = `http://${window.location.hostname}:20000`;
 
-    // --- CONFIGURATION ---
-    const API_URL = "http://172.29.19.42:20000"; 
-
-    // --- ÉLÉMENTS DU DOM ---
+    // DOM Elements
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const messagesContainer = document.getElementById('messages-container');
     const categorySelector = document.getElementById("category-selector");
-    const userList = document.getElementById('user-list'); // La zone pour la liste des utilisateurs
+    const userList = document.getElementById('user-list');
+    const authContainer = document.getElementById('auth-container');
+    const inputContainer = document.getElementById('input-container');
+    const logoutBtn = document.getElementById('logout-btn');
     
-    // Éléments Connexion / Inscription
+    // Auth inputs
     const nomInput = document.getElementById("nom");
     const prenomInput = document.getElementById("prenom");
+    const passInput = document.getElementById("password"); // Nouveau champ
     const btnCreer = document.getElementById("creer");
-    const btnConnexion = document.getElementById("connexion"); 
+    const btnConnexion = document.getElementById("connexion");
 
-    // Éléments Catégorie
+    // Autres
     const newCategoryInput = document.getElementById("new-category");
     const addCategoryButton = document.getElementById("add-category");
+    const imageInput = document.getElementById('image-input');
+    const previewContainer = document.getElementById('preview-container');
+    const fileNameSpan = document.getElementById('file-name');
+    const cancelImgBtn = document.getElementById('cancel-img');
+    let currentBase64Image = null;
 
-    // Variables globales
     let currentCategoryId = 1;
+    let myToken = localStorage.getItem("token"); // Récupère le token stocké
+    let myUserId = localStorage.getItem("userId");
 
-    // --- 1. CHARGEMENT DES CATÉGORIES ---
-    async function fetchCategories() {
+    // UI MANAGER
+    function updateUI() {
+        if(myToken) {
+            authContainer.style.display = 'none';
+            inputContainer.style.display = 'flex';
+            if(logoutBtn) logoutBtn.style.display = 'block';
+            fetchCategories();
+            fetchUsers();
+        } else {
+            authContainer.style.display = 'block';
+            inputContainer.style.display = 'none';
+            if(logoutBtn) logoutBtn.style.display = 'none';
+        }
+    }
+    updateUI();
+
+    // 1. INSCRIPTION
+    async function handleRegister(e) {
+        e.preventDefault();
+        const nom = nomInput.value.trim();
+        const prenom = prenomInput.value.trim();
+        const password = passInput.value.trim();
+
+        if(!nom || !prenom || !password) return alert("Tout remplir !");
+
         try {
-            const res = await fetch(`${API_URL}/api/categories`);
-            if (!res.ok) throw new Error(`Erreur HTTP: ${res.status}`);
+            const res = await fetch(`${API_URL}/api/register`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nom, prenom, password })
+            });
             const data = await res.json();
-            
-            if(categorySelector && data.categories) {
-                const savedId = categorySelector.value;
-                categorySelector.innerHTML = "";
-                data.categories.forEach(cat => {
-                    const opt = document.createElement("option");
-                    opt.value = cat.idcategorie;
-                    opt.textContent = cat.nom;
-                    categorySelector.appendChild(opt);
-                });
-                
-                if (savedId && data.categories.some(c => c.idcategorie == savedId)) {
-                    categorySelector.value = savedId;
-                    currentCategoryId = savedId;
-                } else if(data.categories.length > 0) {
-                    currentCategoryId = data.categories[0].idcategorie;
-                }
-                fetchMessages();
-            }
-        } catch (e) { console.error("❌ Erreur chargement catégories:", e); }
+            if(res.ok) alert("Compte créé ! Tu peux te connecter.");
+            else alert(data.error);
+        } catch(e) { console.error(e); }
     }
 
-    if(categorySelector) {
-        categorySelector.addEventListener('change', (e) => {
-            currentCategoryId = e.target.value;
-            fetchMessages();
-        });
-    }
+    // 2. CONNEXION
+    async function handleLogin(e) {
+        e.preventDefault();
+        const nom = nomInput.value.trim();
+        const prenom = prenomInput.value.trim();
+        const password = passInput.value.trim();
 
-    // --- 2. GESTION DES MESSAGES (AVEC SCROLL) ---
-    async function fetchMessages() {
-        if (!messagesContainer) return;
         try {
-            const res = await fetch(`${API_URL}/api/recuperation?categorie=${currentCategoryId}`);
-            if (!res.ok) throw new Error(`Erreur HTTP: ${res.status}`);
+            const res = await fetch(`${API_URL}/api/login`, {
+                method: "POST", headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ nom, prenom, password })
+            });
+            const data = await res.json();
+
+            if(res.ok) {
+                // Stockage du Token
+                localStorage.setItem("token", data.token);
+                localStorage.setItem("userId", data.userId);
+                myToken = data.token;
+                myUserId = data.userId;
+                
+                alert("Bienvenue " + data.nom);
+                updateUI();
+                fetchMessages();
+            } else {
+                alert(data.error);
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    if(logoutBtn) logoutBtn.addEventListener('click', () => {
+        localStorage.clear();
+        window.location.reload();
+    });
+
+    // MESSAGERIE
+    async function fetchMessages() {
+        if (!messagesContainer || !myToken) return;
+        try {
+            let url = `${API_URL}/api/recuperation?categorie=${currentCategoryId}&userId=${myUserId}`;
+            const res = await fetch(url);
+            if (!res.ok) return;
 
             const data = await res.json();
             messagesContainer.innerHTML = "";
-            const myId = localStorage.getItem("userId");
 
             data.forEach(msg => {
                 const div = document.createElement("div");
                 div.className = "message";
-                if (msg.idutilisateur == myId) {
+                if (msg.idutilisateur == myUserId) {
                    div.classList.add("own-message"); 
                    div.style.marginLeft = "auto";    
                 }
-                div.innerHTML = `
-                    <strong style="color: #b39ddb;">${msg.nom} ${msg.prenom}</strong><br>
-                    ${msg.contenu} 
-                    <div style="text-align:right; font-size:0.7em; opacity:0.5; margin-top:4px;">${msg.heure}</div>
-                `;
+
+                let content = `<strong style="color:#b39ddb;">${msg.nom} ${msg.prenom}</strong><br>`;
+                if(msg.contenu) content += `<span>${msg.contenu}</span>`;
+                if(msg.image) content += `<img src="${msg.image}" class="msg-image">`;
+                content += `<div style="text-align:right; font-size:0.7em; opacity:0.5;">${msg.heure}</div>`;
+
+                div.innerHTML = content;
                 messagesContainer.appendChild(div);
             });
-
-            // --- AUTO-SCROLL MAGIQUE ---
-            // On descend l'ascenseur tout en bas
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
-
-        } catch (e) { console.error("❌ Erreur récup messages:", e); }
+        } catch(e) { console.error(e); }
     }
 
     async function sendMessage() {
+        if(!myToken) return alert("Pas connecté");
         const txt = messageInput.value.trim();
-        const userId = localStorage.getItem("userId");
-
-        if (!userId) return alert("Connecte-toi d'abord !");
-        if (!txt) return;
+        
+        if (!txt && !currentBase64Image) return;
 
         try {
             const res = await fetch(`${API_URL}/api/messages`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${myToken}` // ENVOI DU TOKEN
+                },
                 body: JSON.stringify({
                     contenu: txt,
-                    idutilisateur: userId,
+                    image: currentBase64Image,
                     idCategorie: currentCategoryId
                 })
             });
-            if(res.ok) {
-                messageInput.value = ""; 
-                fetchMessages(); 
-            }
-        } catch (e) { console.error("❌ Erreur envoi:", e); }
-    }
-
-    // --- 3. GESTION LISTE UTILISATEURS (POUR LA GAUCHE) ---
-    async function fetchUsers() {
-        if (!userList) return;
-
-        try {
-            const res = await fetch(`${API_URL}/api/getutilisateur`);
-            const data = await res.json();
-
-            // On vide la liste pour la reconstruire
-            userList.innerHTML = "";
-
-            if (data.users) {
-                data.users.forEach(user => {
-                    const li = document.createElement('li');
-                    
-                    // Style direct pour être sûr que c'est joli
-                    li.style.padding = "10px";
-                    li.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-                    li.style.display = "flex";
-                    li.style.alignItems = "center";
-                    li.style.gap = "10px";
-                    li.style.color = "white";
-
-                    // On ajoute une icône utilisateur + le nom
-                    li.innerHTML = `
-                        <i class="fa-solid fa-user" style="color: #b39ddb;"></i>
-                        <span>${user.nom} ${user.prenom}</span>
-                    `;
-                    
-                    userList.appendChild(li);
-                });
-            }
-        } catch (e) { console.error("Erreur chargement utilisateurs:", e); }
-    }
-
-    // --- 4. FONCTIONS CONNEXION / INSCRIPTION ---
-    async function handleInscription(e) {
-        e.preventDefault();
-        const nom = nomInput.value.trim();
-        const prenom = prenomInput.value.trim();
-        if (!nom || !prenom) return alert("Remplis les champs !");
-
-        try {
-            const res = await fetch(`${API_URL}/api/addutilisateur`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ nom, prenom })
-            });
-            if(res.ok) {
-                alert("Compte créé !");
-                fetchUsers(); // Mise à jour immédiate de la liste
-            } else { alert("Erreur création"); }
-        } catch (err) { console.error(err); }
-    }
-
-    async function handleConnexion(e) {
-        e.preventDefault();
-        const nom = nomInput.value.trim();
-        const prenom = prenomInput.value.trim();
-
-        try {
-            const res = await fetch(`${API_URL}/api/getutilisateur`);
-            const data = await res.json();
-            const user = data.users.find(u => 
-                u.nom.toLowerCase() === nom.toLowerCase() && 
-                u.prenom.toLowerCase() === prenom.toLowerCase()
-            );
             
-            if(user) {
-                localStorage.setItem("userId", user.idutilisateur);
-                alert(`Connecté : ${user.nom}`);
-                document.getElementById("messageForm").style.display = "none"; 
-                fetchMessages(); 
-            } else { alert("Introuvable"); }
-        } catch (err) { console.error(err); }
-    }
-
-    // --- 5. AJOUT CATÉGORIE ---
-    async function addCategory(e) {
-        if(e) e.preventDefault();
-        const nomCat = newCategoryInput.value.trim();
-        if (!nomCat) return alert("Nom vide !");
-
-        try {
-            const res = await fetch(`${API_URL}/api/categories`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ nom: nomCat })
-            });
-            if (res.ok) {
-                alert("Catégorie ajoutée !");
-                newCategoryInput.value = "";
-                fetchCategories();
+            if(res.ok) {
+                messageInput.value = "";
+                currentBase64Image = null;
+                imageInput.value = "";
+                previewContainer.style.display = 'none';
+                fetchMessages();
             }
-        } catch (err) { console.error(err); }
+        } catch(e) { console.error(e); }
     }
 
-    // --- 6. INITIALISATION ---
-    if(btnCreer) btnCreer.addEventListener('click', handleInscription);
-    if(btnConnexion) btnConnexion.addEventListener('click', handleConnexion);
-    if(sendButton) sendButton.addEventListener('click', (e) => { e.preventDefault(); sendMessage(); });
+    // UTILS
+    async function fetchCategories() {
+        const res = await fetch(`${API_URL}/api/categories`);
+        const data = await res.json();
+        if(categorySelector && data.categories) {
+            categorySelector.innerHTML = "";
+            data.categories.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.idcategorie; opt.textContent = c.nom;
+                categorySelector.appendChild(opt);
+            });
+            if(data.categories.length > 0 && currentCategoryId === 1) currentCategoryId = data.categories[0].idcategorie;
+            fetchMessages();
+        }
+    }
+
+    async function addCategory() {
+        const nom = newCategoryInput.value;
+        if(!nom) return;
+        await fetch(`${API_URL}/api/categories`, {
+            method:"POST", headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({nom})
+        });
+        newCategoryInput.value=""; fetchCategories();
+    }
+
+    async function fetchUsers() {
+        if(!userList) return;
+        const res = await fetch(`${API_URL}/api/getutilisateur`);
+        const data = await res.json();
+        userList.innerHTML = "";
+        data.users.forEach(u => {
+            let isOnline = (u.en_ligne === 1) || (u.idutilisateur == myUserId);
+            const statusClass = isOnline ? "online" : "offline";
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="status-dot ${statusClass}"></span> ${u.nom} ${u.prenom}`;
+            userList.appendChild(li);
+        });
+    }
+
+    // Gestion Images
+    if(imageInput) {
+        imageInput.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    currentBase64Image = e.target.result;
+                    previewContainer.style.display = 'block';
+                    fileNameSpan.textContent = file.name;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    if(cancelImgBtn) cancelImgBtn.addEventListener('click', () => {
+        currentBase64Image = null; imageInput.value=""; previewContainer.style.display='none';
+    });
+
+    // Events
+    if(btnCreer) btnCreer.addEventListener('click', handleRegister);
+    if(btnConnexion) btnConnexion.addEventListener('click', handleLogin);
+    if(sendButton) sendButton.addEventListener('click', sendMessage);
     if(addCategoryButton) addCategoryButton.addEventListener('click', addCategory);
-    if(messageInput) messageInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') { e.preventDefault(); sendMessage(); }});
+    if(messageInput) messageInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendMessage(); });
+    if(categorySelector) categorySelector.addEventListener('change', (e) => { currentCategoryId=e.target.value; fetchMessages(); });
 
-    // Lancement initial
-    fetchCategories();
-    fetchUsers();
-
-    // Boucle de mise à jour (Toutes les 2 secondes)
     setInterval(() => {
-        fetchMessages();
-        fetchUsers();
+        if(myToken) { fetchMessages(); fetchUsers(); }
     }, 2000);
 });

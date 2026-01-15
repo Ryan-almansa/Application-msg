@@ -25,13 +25,14 @@ body, html {
     overflow: hidden; /* Important : empêche la page entière de scroller */
 }
 
-/* --- 2. STRUCTURE FLEXBOX (LA CORRECTION) --- */
+/* --- 2. STRUCTURE FLEXBOX --- */
 #app-container {
     display: flex;
     flex-direction: column; /* Tout s'empile verticalement */
     height: 100vh;          /* Prend 100% de la hauteur de l'écran */
     width: 100%;
     overflow: hidden;
+    position: relative; /* Important pour le pop-up de connexion */
 }
 
 /* --- 3. HEADER --- */
@@ -56,8 +57,14 @@ header h1 {
     gap: 10px;
 }
 
-header i {
-    color: var(--primary-color);
+header i { color: var(--primary-color); }
+
+/* Bouton déconnexion */
+#logout-btn {
+    background: #d32f2f;
+    font-size: 0.8rem;
+    padding: 5px 15px;
+    margin: 0;
 }
 
 /* --- 4. CONTRÔLES DE CATÉGORIE --- */
@@ -83,97 +90,98 @@ header i {
 }
 
 /* --- 5. ZONE PRINCIPALE (CHAT) --- */
-/* C'est ici que la magie opère : flex: 1 permet de prendre tout l'espace libre */
 #main-container {
     flex: 1; 
     display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    overflow: hidden; /* Empêche le dépassement global */
-    position: relative;
+    gap: 1rem; /* Espace entre liste users et chat */
+    padding: 0; /* On retire le padding global pour coller aux bords */
+    overflow: hidden;
 }
 
 #chat-container {
-    flex: 3; /* Le chat prend 3x plus de place que la liste users */
+    flex: 1;
     display: flex;
     flex-direction: column;
-    background: var(--card-bg);
-    border-radius: 12px;
-    padding: 1rem;
-    overflow: hidden; /* Garde les messages DANS la boite */
-    border: 1px solid var(--border-color);
+    background: var(--dark-bg); /* Fond uni pour le chat */
+    position: relative;
 }
 
 #messages-container {
-    flex-grow: 1; /* Prend toute la hauteur dispo dans la boite chat */
-    overflow-y: auto; /* Scroll uniquement ici */
-    padding-right: 10px;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* Scrollbar personnalisée plus discrète */
-#messages-container::-webkit-scrollbar { width: 6px; }
-#messages-container::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 3px; }
-#messages-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+/* Scrollbar personnalisée */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-thumb { background: var(--primary-color); border-radius: 3px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
 
 /* --- 6. STYLE DES MESSAGES --- */
 .message {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--card-bg);
     padding: 10px 16px;
-    border-radius: 12px 12px 12px 2px;
+    border-radius: 12px 12px 12px 0;
     color: var(--text-color);
     font-size: 0.95rem;
     width: fit-content;
     max-width: 75%;
     line-height: 1.4;
+    word-wrap: break-word;
 }
 
-/* Style spécifique pour mes messages (aligné à droite via JS, couleur ici) */
+/* Style spécifique pour mes messages */
 .own-message { 
-    /* Géré par le JS, mais on peut forcer le style ici si besoin */
     background-color: #311b92; /* Un violet très foncé */
+    border-radius: 12px 12px 0 12px;
+    align-self: flex-end;
 }
 
 /* --- 7. ZONE UTILISATEURS --- */
 #users-container {
-    flex: 1;
-    max-width: 250px;
-    min-width: 180px;
+    width: 250px;
     background: var(--card-bg);
-    border-radius: 12px;
-    padding: 1rem;
-    overflow-y: auto;
-    border: 1px solid var(--border-color);
-    display: none; /* Masqué sur mobile par défaut, affiché sur desktop */
-}
-
-@media (min-width: 768px) {
-    #users-container { display: block; }
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
 }
 
 #users-container h2 {
     font-size: 1rem;
-    margin-top: 0;
-    padding-bottom: 10px;
+    margin: 0;
+    padding: 15px;
     border-bottom: 1px solid var(--border-color);
     color: var(--primary-color);
 }
-#user-list { list-style: none; padding: 0; }
-#user-list li { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.9rem; }
 
-/* --- 8. BARRES DU BAS (Input & Form) --- */
-/* On retire les positions fixed pour qu'elles s'empilent */
+#user-list { 
+    list-style: none; 
+    padding: 0; margin: 0;
+    overflow-y: auto; 
+    flex: 1;
+}
 
+#user-list li { 
+    padding: 10px 15px; 
+    border-bottom: 1px solid rgba(255,255,255,0.05); 
+    font-size: 0.9rem; 
+    display: flex; 
+    align-items: center;
+}
+
+/* --- 8. BARRE D'INPUT (EN BAS) --- */
 #input-container {
     background: var(--card-bg);
     padding: 15px 20px;
     display: flex;
     align-items: center;
     border-top: 1px solid var(--border-color);
-    flex-shrink: 0; /* Ne s'écrase pas */
+    flex-shrink: 0;
     z-index: 10;
+    gap: 10px;
 }
 
 #message-input {
@@ -188,8 +196,58 @@ header i {
     transition: border 0.3s;
 }
 
-#message-input:focus {
-    border-color: var(--primary-color);
+#message-input:focus { border-color: var(--primary-color); }
+
+/* Bouton Trombone */
+#upload-btn {
+    color: var(--text-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 5px;
+    transition: color 0.3s;
+}
+#upload-btn:hover { color: var(--primary-color); }
+
+/* Zone prévisualisation image */
+#preview-container {
+    background: var(--input-bg);
+    padding: 5px 20px;
+    font-size: 0.8rem;
+    border-top: 1px solid var(--primary-color);
+    color: #aaa;
+}
+
+/* --- 9. FORMULAIRE DE CONNEXION (POP-UP CENTRÉ) --- */
+/* C'est la partie importante qui manquait pour centrer le login */
+#auth-container {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--card-bg);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8);
+    border: 1px solid var(--primary-color);
+    text-align: center;
+    z-index: 2000; /* Au dessus de tout */
+    width: 350px;
+}
+
+#authForm {
+    display: flex; flex-direction: column; gap: 15px; margin-top: 20px;
+}
+
+#authForm input {
+    padding: 12px; 
+    border-radius: 5px;
+    border: 1px solid var(--border-color); 
+    background: var(--input-bg);
+    color: var(--text-color); 
+    outline: none;
+}
+
+.auth-buttons {
+    display: flex; gap: 10px; justify-content: center;
 }
 
 /* Boutons génériques */
@@ -201,63 +259,62 @@ button {
     color: white;
     font-weight: 600;
     cursor: pointer;
-    margin-left: 10px;
     transition: background 0.3s;
     font-size: 0.9rem;
 }
 
-button:hover {
-    background: var(--primary-hover);
+button:hover { background: var(--primary-hover); }
+
+/* --- 10. PASTILLES DE STATUT --- */
+.status-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 10px;
 }
 
-#messageForm {
-    background: var(--dark-bg);
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    flex-shrink: 0;
-    border-top: 1px solid rgba(255,255,255,0.05);
+.online {
+    background-color: #00e676;
+    box-shadow: 0 0 5px #00e676;
+    animation: blink 1.5s infinite alternate;
 }
 
-#messageForm input {
-    background: var(--input-bg);
-    border: 1px solid var(--border-color);
-    padding: 8px 12px;
-    border-radius: 6px;
-    color: white;
-    width: 120px;
+.offline {
+    background-color: #757575;
+    opacity: 0.5;
 }
 
-/* --- 9. FOOTER --- */
+@keyframes blink {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0.5; transform: scale(0.9); }
+}
+
+/* --- 11. IMAGES DANS LE CHAT --- */
+.msg-image {
+    display: block;
+    margin-top: 8px;
+    max-width: 100%;
+    max-height: 250px;
+    border-radius: 8px;
+    object-fit: contain;
+    cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* --- 12. FOOTER --- */
 footer {
     background-color: var(--dark-bg);
     text-align: center;
-    padding: 8px 0;
+    padding: 5px 0;
     font-size: 0.75rem;
     color: rgba(255, 255, 255, 0.4);
     flex-shrink: 0;
 }
 
-/* --- 10. RESPONSIVE (MOBILE) --- */
+/* --- 13. RESPONSIVE --- */
 @media (max-width: 768px) {
-    #main-container {
-        padding: 0.5rem;
-    }
-    
-    #input-container {
-        padding: 10px;
-    }
-
-    #messageForm {
-        flex-direction: column;
-        gap: 8px;
-        padding-bottom: 20px;
-    }
-    
-    #messageForm input { width: 100%; }
-    #messageForm button { width: 100%; margin: 0; }
-    
-    footer { display: none; } /* On cache le footer sur mobile pour gagner de la place */
+    #users-container { display: none; }
+    #main-container { padding: 0; }
+    #auth-container { width: 90%; }
 }
