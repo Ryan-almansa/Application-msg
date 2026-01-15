@@ -318,3 +318,76 @@ footer {
     #main-container { padding: 0; }
     #auth-container { width: 90%; }
 }
+
+
+
+/*connexion perdu */
+
+/* --- OVERLAY SERVEUR OFF --- */
+#offline-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(15, 10, 26, 0.9); /* Fond très sombre transparent */
+    backdrop-filter: blur(8px);        /* Effet de flou moderne */
+    z-index: 9999;                     /* Au-dessus de tout */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+}
+
+/* Classe pour cacher l'overlay via JS */
+#offline-overlay.hidden {
+    opacity: 0;
+    pointer-events: none; /* On peut cliquer au travers quand caché */
+}
+
+.offline-content {
+    text-align: center;
+    color: #ff5252; /* Rouge doux */
+}
+
+.offline-content i {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: pulse-red 2s infinite;
+}
+
+.offline-content h2 {
+    font-size: 1.8rem;
+    color: white;
+    margin: 0 0 10px 0;
+    font-weight: 600;
+}
+
+.offline-content p {
+    color: #aaa;
+    margin: 0;
+}
+
+/* Animation pulsation icône */
+@keyframes pulse-red {
+    0% { transform: scale(1); text-shadow: 0 0 0 rgba(255, 82, 82, 0.7); }
+    70% { transform: scale(1.1); text-shadow: 0 0 20px rgba(255, 82, 82, 0); }
+    100% { transform: scale(1); text-shadow: 0 0 0 rgba(255, 82, 82, 0); }
+}
+
+/* Animation des petits points (...) */
+.loader-dots {
+    margin-top: 15px;
+}
+.loader-dots span {
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    margin: 0 3px;
+    animation: bounce 1.4s infinite ease-in-out both;
+}
+.loader-dots span:nth-child(1) { animation-delay: -0.32s; }
+.loader-dots span:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes bounce {
+    0%, 80%, 100% { transform: scale(0); }
+    40% { transform: scale(1); }
+}

@@ -104,16 +104,26 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // MESSAGERIE
+   // On récupère l'élément overlay
+    const offlineOverlay = document.getElementById('offline-overlay');
+
     async function fetchMessages() {
         if (!messagesContainer || !myToken) return;
+        
         try {
             let url = `${API_URL}/api/recuperation?categorie=${currentCategoryId}&userId=${myUserId}`;
             const res = await fetch(url);
+            
+            // --- C'EST ICI LA MAGIE ---
+            // Si le fetch réussit, on cache l'overlay "Serveur Off"
+            if (offlineOverlay) offlineOverlay.classList.add('hidden');
+
             if (!res.ok) return;
 
             const data = await res.json();
+            
+            // (Le reste de ton code d'affichage des messages reste identique...)
             messagesContainer.innerHTML = "";
-
             data.forEach(msg => {
                 const div = document.createElement("div");
                 div.className = "message";
@@ -121,17 +131,22 @@ document.addEventListener('DOMContentLoaded', () => {
                    div.classList.add("own-message"); 
                    div.style.marginLeft = "auto";    
                 }
-
                 let content = `<strong style="color:#b39ddb;">${msg.nom} ${msg.prenom}</strong><br>`;
                 if(msg.contenu) content += `<span>${msg.contenu}</span>`;
                 if(msg.image) content += `<img src="${msg.image}" class="msg-image">`;
                 content += `<div style="text-align:right; font-size:0.7em; opacity:0.5;">${msg.heure}</div>`;
-
                 div.innerHTML = content;
                 messagesContainer.appendChild(div);
             });
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        } catch(e) { console.error(e); }
+            // On ne scroll en bas que si on n'est pas déjà en train de lire l'historique (optionnel)
+            // messagesContainer.scrollTop = messagesContainer.scrollHeight; 
+
+        } catch(e) { 
+            console.error("Erreur serveur:", e);
+            // --- C'EST ICI LA MAGIE ---
+            // Si le fetch échoue (le serveur est éteint), on affiche l'overlay
+            if (offlineOverlay) offlineOverlay.classList.remove('hidden');
+        }
     }
 
     async function sendMessage() {
