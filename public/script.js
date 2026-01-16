@@ -1,8 +1,19 @@
+// --- 1. SÉCURITÉ MAXIMUM (Console Muette) ---
+// On écrase les fonctions de la console AVANT tout le reste
+console.log = function() {};
+console.warn = function() {};
+console.error = function() {};
+console.info = function() {};
+// (Optionnel) Bloque aussi le clear pour empêcher de voir si ça a été vidé
+console.clear = function() {};
+
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("✅ Script Secure chargé.");
+    // Note: Ce log ne s'affichera pas car on a tué la console juste au-dessus !
+    // console.log("✅ Script Secure chargé."); 
+    
     const API_URL = `http://${window.location.hostname}:20000`;
 
-    // DOM Elements
+    // --- DOM Elements ---
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const messagesContainer = document.getElementById('messages-container');
@@ -11,11 +22,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const authContainer = document.getElementById('auth-container');
     const inputContainer = document.getElementById('input-container');
     const logoutBtn = document.getElementById('logout-btn');
-    
+    const offlineOverlay = document.getElementById('offline-overlay');
+
     // Auth inputs
     const nomInput = document.getElementById("nom");
     const prenomInput = document.getElementById("prenom");
-    const passInput = document.getElementById("password"); // Nouveau champ
+    const passInput = document.getElementById("password");
     const btnCreer = document.getElementById("creer");
     const btnConnexion = document.getElementById("connexion");
 
@@ -26,13 +38,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const previewContainer = document.getElementById('preview-container');
     const fileNameSpan = document.getElementById('file-name');
     const cancelImgBtn = document.getElementById('cancel-img');
+    
     let currentBase64Image = null;
-
     let currentCategoryId = 1;
-    let myToken = localStorage.getItem("token"); // Récupère le token stocké
+    let myToken = localStorage.getItem("token");
     let myUserId = localStorage.getItem("userId");
 
-    // UI MANAGER
+    // --- UI MANAGER ---
     function updateUI() {
         if(myToken) {
             authContainer.style.display = 'none';
@@ -48,14 +60,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateUI();
 
-    // 1. INSCRIPTION
+    // --- 1. INSCRIPTION (Corrigé : Anti-Double Compte) ---
     async function handleRegister(e) {
         e.preventDefault();
+        
+        // Si le bouton est déjà désactivé, on ne fait rien (Anti-Spam)
+        if (btnCreer.disabled) return;
+
         const nom = nomInput.value.trim();
         const prenom = prenomInput.value.trim();
         const password = passInput.value.trim();
 
         if(!nom || !prenom || !password) return alert("Tout remplir !");
+
+        // 🔒 ON VERROUILLE LE BOUTON
+        btnCreer.disabled = true;
+        btnCreer.textContent = "Chargement...";
 
         try {
             const res = await fetch(`${API_URL}/api/register`, {
@@ -65,15 +85,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
             if(res.ok) alert("Compte créé ! Tu peux te connecter.");
             else alert(data.error);
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            // console.error(e); // Console désactivée
+        } finally {
+            // 🔓 ON DÉVERROUILLE QUOI QU'IL ARRIVE
+            btnCreer.disabled = false;
+            btnCreer.textContent = "S'inscrire";
+        }
     }
 
-    // 2. CONNEXION
+    // --- 2. CONNEXION (Sécurisé aussi) ---
     async function handleLogin(e) {
         e.preventDefault();
+        if (btnConnexion.disabled) return;
+
         const nom = nomInput.value.trim();
         const prenom = prenomInput.value.trim();
         const password = passInput.value.trim();
+
+        btnConnexion.disabled = true;
+        btnConnexion.textContent = "...";
 
         try {
             const res = await fetch(`${API_URL}/api/login`, {
@@ -83,7 +114,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await res.json();
 
             if(res.ok) {
-                // Stockage du Token
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("userId", data.userId);
                 myToken = data.token;
@@ -95,7 +125,12 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 alert(data.error);
             }
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            // console.error(e); 
+        } finally {
+            btnConnexion.disabled = false;
+            btnConnexion.textContent = "Se connecter";
+        }
     }
 
     if(logoutBtn) logoutBtn.addEventListener('click', () => {
@@ -103,10 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.reload();
     });
 
-    // MESSAGERIE
-   // On récupère l'élément overlay
-    const offlineOverlay = document.getElementById('offline-overlay');
-
+    // --- MESSAGERIE ---
     async function fetchMessages() {
         if (!messagesContainer || !myToken) return;
         
@@ -114,15 +146,13 @@ document.addEventListener('DOMContentLoaded', () => {
             let url = `${API_URL}/api/recuperation?categorie=${currentCategoryId}&userId=${myUserId}`;
             const res = await fetch(url);
             
-            // --- C'EST ICI LA MAGIE ---
-            // Si le fetch réussit, on cache l'overlay "Serveur Off"
+            // Gestion Overlay (Serveur ON)
             if (offlineOverlay) offlineOverlay.classList.add('hidden');
 
             if (!res.ok) return;
 
             const data = await res.json();
             
-            // (Le reste de ton code d'affichage des messages reste identique...)
             messagesContainer.innerHTML = "";
             data.forEach(msg => {
                 const div = document.createElement("div");
@@ -138,61 +168,68 @@ document.addEventListener('DOMContentLoaded', () => {
                 div.innerHTML = content;
                 messagesContainer.appendChild(div);
             });
-            // On ne scroll en bas que si on n'est pas déjà en train de lire l'historique (optionnel)
-            // messagesContainer.scrollTop = messagesContainer.scrollHeight; 
 
         } catch(e) { 
-            console.error("Erreur serveur:", e);
-            // --- C'EST ICI LA MAGIE ---
-            // Si le fetch échoue (le serveur est éteint), on affiche l'overlay
+            // Gestion Overlay (Serveur OFF)
             if (offlineOverlay) offlineOverlay.classList.remove('hidden');
         }
     }
 
+    // --- ENVOI DE MESSAGE (Corrigé : Anti-Double Envoi) ---
     async function sendMessage() {
         if(!myToken) return alert("Pas connecté");
-        const txt = messageInput.value.trim();
         
-        if (!txt && !currentBase64Image) return;
+        const txt = messageInput.value.trim();
+        // On sauvegarde l'image actuelle dans une variable locale
+        const imgToSend = currentBase64Image; 
+        
+        if (!txt && !imgToSend) return;
+
+        // ✅ CORRECTION VITALE : On vide l'interface TOUT DE SUITE
+        // Avant même d'envoyer la requête.
+        messageInput.value = "";
+        currentBase64Image = null;
+        imageInput.value = "";
+        if(previewContainer) previewContainer.style.display = 'none';
 
         try {
             const res = await fetch(`${API_URL}/api/messages`, {
                 method: "POST",
                 headers: { 
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${myToken}` // ENVOI DU TOKEN
+                    "Authorization": `Bearer ${myToken}`
                 },
                 body: JSON.stringify({
                     contenu: txt,
-                    image: currentBase64Image,
+                    image: imgToSend, // On envoie la copie sauvegardée
                     idCategorie: currentCategoryId
                 })
             });
             
             if(res.ok) {
-                messageInput.value = "";
-                currentBase64Image = null;
-                imageInput.value = "";
-                previewContainer.style.display = 'none';
                 fetchMessages();
             }
-        } catch(e) { console.error(e); }
+        } catch(e) { 
+            // Erreur silencieuse
+        }
     }
 
-    // UTILS
+    // --- UTILS ---
     async function fetchCategories() {
-        const res = await fetch(`${API_URL}/api/categories`);
-        const data = await res.json();
-        if(categorySelector && data.categories) {
-            categorySelector.innerHTML = "";
-            data.categories.forEach(c => {
-                const opt = document.createElement("option");
-                opt.value = c.idcategorie; opt.textContent = c.nom;
-                categorySelector.appendChild(opt);
-            });
-            if(data.categories.length > 0 && currentCategoryId === 1) currentCategoryId = data.categories[0].idcategorie;
-            fetchMessages();
-        }
+        try {
+            const res = await fetch(`${API_URL}/api/categories`);
+            const data = await res.json();
+            if(categorySelector && data.categories) {
+                categorySelector.innerHTML = "";
+                data.categories.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.idcategorie; opt.textContent = c.nom;
+                    categorySelector.appendChild(opt);
+                });
+                if(data.categories.length > 0 && currentCategoryId === 1) currentCategoryId = data.categories[0].idcategorie;
+                fetchMessages();
+            }
+        } catch(e) {}
     }
 
     async function addCategory() {
@@ -207,16 +244,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchUsers() {
         if(!userList) return;
-        const res = await fetch(`${API_URL}/api/getutilisateur`);
-        const data = await res.json();
-        userList.innerHTML = "";
-        data.users.forEach(u => {
-            let isOnline = (u.en_ligne === 1) || (u.idutilisateur == myUserId);
-            const statusClass = isOnline ? "online" : "offline";
-            const li = document.createElement('li');
-            li.innerHTML = `<span class="status-dot ${statusClass}"></span> ${u.nom} ${u.prenom}`;
-            userList.appendChild(li);
-        });
+        try {
+            const res = await fetch(`${API_URL}/api/getutilisateur`);
+            const data = await res.json();
+            userList.innerHTML = "";
+            data.users.forEach(u => {
+                let isOnline = (u.en_ligne === 1) || (u.idutilisateur == myUserId);
+                const statusClass = isOnline ? "online" : "offline";
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="status-dot ${statusClass}"></span> ${u.nom} ${u.prenom}`;
+                userList.appendChild(li);
+            });
+        } catch(e) {}
     }
 
     // Gestion Images
@@ -227,8 +266,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     currentBase64Image = e.target.result;
-                    previewContainer.style.display = 'block';
-                    fileNameSpan.textContent = file.name;
+                    if(previewContainer) {
+                        previewContainer.style.display = 'block';
+                        fileNameSpan.textContent = file.name;
+                    }
                 };
                 reader.readAsDataURL(file);
             }
@@ -238,14 +279,48 @@ document.addEventListener('DOMContentLoaded', () => {
         currentBase64Image = null; imageInput.value=""; previewContainer.style.display='none';
     });
 
-    // Events
+    // --- SÉCURITÉ CLIENT SUPPLÉMENTAIRE ---
+
+    // 1. Désactiver le clic droit
+    document.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+
+    // 2. Désactiver les raccourcis clavier (F12, Inspecter)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'F12' || 
+           (e.ctrlKey && e.shiftKey && e.key === 'I') || 
+           (e.ctrlKey && e.shiftKey && e.key === 'J') || 
+           (e.ctrlKey && e.key === 'u')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+
+    // 3. Le piège (Debugger Loop)
+    // Cela rend l'inspection pénible en arrêtant le script si la console est ouverte
+    setInterval(() => {
+        (function(){}).constructor("debugger")();
+    }, 1000);
+
+
+    // --- EVENTS LISTENERS ---
     if(btnCreer) btnCreer.addEventListener('click', handleRegister);
     if(btnConnexion) btnConnexion.addEventListener('click', handleLogin);
     if(sendButton) sendButton.addEventListener('click', sendMessage);
     if(addCategoryButton) addCategoryButton.addEventListener('click', addCategory);
-    if(messageInput) messageInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendMessage(); });
+    
+    // Correction Touche Entrée (Anti-saut de ligne + Envoi)
+    if(messageInput) messageInput.addEventListener('keypress', (e) => { 
+        if(e.key === 'Enter') { 
+            e.preventDefault(); 
+            sendMessage(); 
+        } 
+    });
+    
     if(categorySelector) categorySelector.addEventListener('change', (e) => { currentCategoryId=e.target.value; fetchMessages(); });
 
+    // Boucle principale
     setInterval(() => {
         if(myToken) { fetchMessages(); fetchUsers(); }
     }, 2000);
