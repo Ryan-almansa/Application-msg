@@ -3,15 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Speaky </title>
+    <title>Speaky RPG</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://kit.fontawesome.com/d2592aca38.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <div id="app-container">
+        
         <header>
-            <h1><i class="fa-solid fa-comments"></i> Speaky</h1> 
-            <button id="logout-btn" style="display:none;">Déconnexion</button>
+            <div class="header-left">
+                <h1><i class="fa-solid fa-comments"></i> Speaky</h1>
+            </div>
+            
+            <div id="level-container" style="display:none;">
+                <div class="level-badge">NIVEAU <span id="my-level">1</span></div>
+                <div class="xp-bar-bg">
+                    <div id="xp-progress" class="xp-bar-fill" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <button id="open-shop-btn" class="icon-btn" title="Boutique & Inventaire">
+                    <i class="fa-solid fa-store"></i>
+                </button>
+                
+                <button id="logout-btn" class="icon-btn logout" style="display:none;" title="Déconnexion">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
         </header>
 
         <div id="category-controls">
@@ -28,56 +47,59 @@
 
             <div id="chat-container">
                 <div id="messages-container"></div>
-                <div id="offline-overlay" class="hidden">
-        <div class="offline-content">
-            <i class="fa-solid fa-server"></i>
-            <h2>Connexion perdue</h2>
-            <p>Le serveur est hors ligne...</p>
-            <div class="loader-dots">
-                <span></span><span></span><span></span>
-            </div>
-        </div>
-    </div>
-    <script src="script.js"></script>
-</body>
-</html>
             </div>
         </main>
 
         <div id="input-container" style="display:none;">
-            <label for="image-input" id="upload-btn">
-                <i class="fa-solid fa-paperclip"></i>
-            </label>
+            <label for="image-input" id="upload-btn"><i class="fa-solid fa-paperclip"></i></label>
             <input type="file" id="image-input" accept="image/*" style="display: none;">
-            
             <input id="message-input" type="text" placeholder="Écrivez un message..." autocomplete="off">
             <button id="send-button">Envoyer</button>
         </div>
         
         <div id="preview-container" style="display:none;">
             Image : <span id="file-name"></span> 
-            <button id="cancel-img" style="color:red; background:none; border:none; cursor:pointer;">
-                <i class="fa-solid fa-xmark"></i>
-            </button>
+            <button id="cancel-img" style="color:red; background:none; border:none; cursor:pointer;"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <div id="auth-container">
             <h3><i class="fa-solid fa-lock"></i> Connexion</h3>
             <form id="authForm">
-                <input type="text" id="nom" placeholder="Nom" required>
+                <input type="text" id="nom" placeholder="Nom d'utilisateur" required>
                 <input type="text" id="prenom" placeholder="Prénom" required>
                 <input type="password" id="password" placeholder="Mot de passe" required>
                 
                 <div class="auth-buttons">
-                    <button id="creer" type="button">S'inscrire</button>
+                    <button id="creer" type="button">Créer un compte</button>
                     <button id="connexion" type="button">Se connecter</button>
                 </div>
             </form>
         </div>
 
-        <footer>
-            <p>© 2025 Speaky Inc - rester respectueux s'il vous plaît pas de haine </p>
-        </footer>
+        <div id="shop-modal" class="hidden">
+            <div class="shop-content">
+                <div class="shop-header">
+                    <h2><i class="fa-solid fa-gem"></i> Boutique</h2>
+                    <div class="shop-money">
+                        Solde : <span id="shop-coins-display">0</span> <i class="fa-solid fa-coins"></i>
+                    </div>
+                </div>
+                
+                <p>Vert = Possédé | Bleu = Équipé</p>
+                
+                <div id="shop-items-container" class="shop-items"></div>
+                
+                <button id="close-shop" class="close-btn">Fermer</button>
+            </div>
+        </div>
+
+        <div id="offline-overlay" class="hidden">
+            <div class="offline-content">
+                <i class="fa-solid fa-server"></i>
+                <h2>Connexion en cours...</h2>
+                <div class="loader-dots"><span></span><span></span><span></span></div>
+            </div>
+        </div>
     </div>
     
     <script src="script.js"></script>
