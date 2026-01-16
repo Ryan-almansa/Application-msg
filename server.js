@@ -26,7 +26,7 @@ const bddConnection = mysql.createConnection({
 
 bddConnection.connect(err => {
     if (err) console.error('❌ Erreur SQL :', err.message);
-    else console.log("✅ Connecté à MySQL (Mode Dev)");
+    else console.log("✅ Connecté à MySQL (Mode Pro SQL)");
 });
 
 const xpCooldowns = {};
@@ -71,35 +71,50 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// 3. MES INFOS
+// 3. MES INFOS (Nouvelle version SQL PRO)
 app.get('/api/me', authenticateToken, (req, res) => {
     const userId = req.user.id;
-    const sqlUser = "SELECT xp, coins, active_badge, (FLOOR(xp / 100) + 1) as niveau FROM utilisateur WHERE idutilisateur = ?";
-    const sqlInv = "SELECT badge_name FROM inventory WHERE idutilisateur = ?";
+    const sqlUser = "SELECT xp, coins, (FLOOR(xp / 100) + 1) as niveau FROM utilisateur WHERE idutilisateur = ?";
+    
+    // On récupère TOUT l'inventaire avec le statut équipé
+    const sqlInv = "SELECT badge_name, is_equipped FROM inventory WHERE idutilisateur = ?";
+
     bddConnection.query(sqlUser, [userId], (err, userResult) => {
         if (err) return res.status(500).json({ error: "Erreur SQL" });
+        
         bddConnection.query(sqlInv, [userId], (err, invResult) => {
-            const myBadges = invResult.map(row => row.badge_name);
-            res.json({ ...userResult[0], inventory: myBadges });
+            // Liste des items possédés (pour les colorer en vert)
+            const owned = invResult.map(i => i.badge_name);
+            // Liste des items équipés (is_equipped = 1)
+            const equipped = invResult.filter(i => i.is_equipped === 1).map(i => i.badge_name);
+            
+            res.json({ 
+                ...userResult[0], 
+                inventory: owned,
+                active_badges: equipped 
+            });
         });
     });
 });
 
-// 4. MESSAGES + CHEAT CODE DEV
+// 4. MESSAGES + CHEAT CODE
 app.post('/api/messages', authenticateToken, (req, res) => {
     const { contenu, image, idCategorie } = req.body;
     const userId = req.user.id;
-    
-    // --- CHEAT CODE DEV ---
+
     if (contenu === '/admin') {
-        // Ajoute 10 000 pièces
-        bddConnection.query("UPDATE utilisateur SET coins = coins + 10000 WHERE idutilisateur = ?", [userId], (err) => {
-            if (err) return res.status(500).json({ error: "Erreur cheat" });
-            return res.json({ message: "Cheat activé : +10 000 pièces !", xp: 0, coins: 0, isCheat: true });
+        bddConnection.query("UPDATE utilisateur SET coins = coins + 10000 WHERE idutilisateur = ?", [userId], () => {
+            return res.json({ message: "Cheat activé !", xp: 0, coins: 0, isCheat: true });
         });
-        return; // On arrête là, on n'envoie pas le message dans le chat
+        return;
     }
-    // -----------------------
+    // RESET : Commande pour vider son inventaire si bug
+    if (contenu === '/reset') {
+        bddConnection.query("UPDATE inventory SET is_equipped = 0 WHERE idutilisateur = ?", [userId], () => {
+            return res.json({ message: "Inventaire déséquipé !", xp: 0, coins: 0, isCheat: true });
+        });
+        return;
+    }
 
     const now = Date.now();
     let gainedXp = 0, gainedCoins = 0;
@@ -120,16 +135,20 @@ app.post('/api/messages', authenticateToken, (req, res) => {
     });
 });
 
-// 5. LIRE
+// 5. LIRE MESSAGES (JOIN plus complexe pour récupérer les badges équipés)
 app.get('/api/recuperation', (req, res) => {
     const idCat = req.query.categorie || 1;
     if (req.query.userId && req.query.userId !== 'null') bddConnection.query("UPDATE utilisateur SET last_seen = NOW() WHERE idutilisateur = ?", [req.query.userId]);
+    
+    // Requête avancée : On joint la table inventaire pour récupérer UNIQUEMENT les badges équipés
     const query = `
         SELECT m.id, m.contenu, m.image, m.heure, m.date, 
-               u.nom, u.prenom, u.active_badge, 
-               (FLOOR(u.xp / 100) + 1) as niveau, m.idutilisateur
-        FROM message m JOIN utilisateur u ON m.idutilisateur = u.idutilisateur
-        WHERE m.idcategorie = ? ORDER BY m.date ASC, m.heure ASC
+               u.nom, u.prenom, (FLOOR(u.xp / 100) + 1) as niveau, m.idutilisateur,
+               (SELECT GROUP_CONCAT(badge_name) FROM inventory WHERE idutilisateur = u.idutilisateur AND is_equipped = 1) as active_badge
+        FROM message m 
+        JOIN utilisateur u ON m.idutilisateur = u.idutilisateur
+        WHERE m.idcategorie = ? 
+        ORDER BY m.date ASC, m.heure ASC
     `;
     bddConnection.query(query, [idCat], (err, results) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -137,49 +156,53 @@ app.get('/api/recuperation', (req, res) => {
     });
 });
 
-// 6. ACHAT
+// 6. ACHETER
 app.post('/api/shop/buy', authenticateToken, (req, res) => {
     const { badge, price } = req.body;
     const userId = req.user.id;
+
     bddConnection.query("SELECT coins FROM utilisateur WHERE idutilisateur = ?", [userId], (err, result) => {
         if (result[0].coins < price) return res.status(400).json({ error: "Pas assez d'argent !" });
+        
         bddConnection.query("SELECT * FROM inventory WHERE idutilisateur = ? AND badge_name = ?", [userId, badge], (err, inv) => {
             if (inv && inv.length > 0) return res.status(400).json({ error: "Déjà possédé !" });
+            
             bddConnection.query("UPDATE utilisateur SET coins = coins - ? WHERE idutilisateur = ?", [price, userId]);
-            bddConnection.query("INSERT INTO inventory (idutilisateur, badge_name) VALUES (?, ?)", [userId, badge], (err) => {
+            // is_equipped est 0 par défaut
+            bddConnection.query("INSERT INTO inventory (idutilisateur, badge_name, is_equipped) VALUES (?, ?, 0)", [userId, badge], (err) => {
                 res.json({ success: true, message: `Acheté !` });
             });
         });
     });
 });
 
-// 7. ÉQUIPER (CORRIGÉ & ROBUSTE)
+// 7. ÉQUIPER / DÉSÉQUIPER (La logique SQL propre)
 app.post('/api/shop/equip', authenticateToken, (req, res) => {
     const { badge } = req.body;
     const userId = req.user.id;
 
-    bddConnection.query("SELECT * FROM inventory WHERE idutilisateur = ? AND badge_name = ?", [userId, badge], (err, inv) => {
-        if (!inv || inv.length === 0) return res.status(403).json({ error: "Tu ne possèdes pas ce badge." });
+    // 1. On récupère l'état actuel de cet objet
+    bddConnection.query("SELECT is_equipped FROM inventory WHERE idutilisateur = ? AND badge_name = ?", [userId, badge], (err, result) => {
+        if (!result || result.length === 0) return res.status(403).json({ error: "Tu ne l'as pas acheté !" });
+        
+        const isCurrentlyEquipped = result[0].is_equipped;
 
-        bddConnection.query("SELECT active_badge FROM utilisateur WHERE idutilisateur = ?", [userId], (err, result) => {
-            let currentStr = result[0].active_badge || "";
-            // Le secret est ici : .filter(b => b) élimine les vides
-            let currentList = currentStr.split(',').filter(b => b && b.trim() !== "");
-
-            if (currentList.includes(badge)) {
-                // Déséquiper
-                currentList = currentList.filter(b => b !== badge);
-            } else {
-                // Équiper
-                if (currentList.length >= 3) return res.status(400).json({ error: "Max 3 badges !" });
-                currentList.push(badge);
-            }
-            
-            const newStr = currentList.join(',');
-            bddConnection.query("UPDATE utilisateur SET active_badge = ? WHERE idutilisateur = ?", [newStr, userId], (err) => {
-                res.json({ success: true, active_badge: newStr });
+        if (isCurrentlyEquipped) {
+            // S'il est équipé, on le déséquipe (facile)
+            bddConnection.query("UPDATE inventory SET is_equipped = 0 WHERE idutilisateur = ? AND badge_name = ?", [userId, badge], () => {
+                res.json({ success: true });
             });
-        });
+        } else {
+            // S'il n'est pas équipé, on vérifie si on a de la place (Max 3)
+            bddConnection.query("SELECT COUNT(*) as count FROM inventory WHERE idutilisateur = ? AND is_equipped = 1", [userId], (err, countResult) => {
+                if (countResult[0].count >= 3) return res.status(400).json({ error: "Déjà 3 badges équipés ! Déséquipes-en un." });
+                
+                // On active
+                bddConnection.query("UPDATE inventory SET is_equipped = 1 WHERE idutilisateur = ? AND badge_name = ?", [userId, badge], () => {
+                    res.json({ success: true });
+                });
+            });
+        }
     });
 });
 
@@ -191,4 +214,4 @@ app.get('/api/getutilisateur', (req, res) => {
 app.get('/api/categories', (req, res) => bddConnection.query('SELECT * FROM Categorie', (e, r) => res.json({ categories: r })));
 app.post('/api/categories', (req, res) => bddConnection.query('INSERT INTO Categorie (nom) VALUES (?)', [req.body.nom], (e, r) => res.json({ id: r.insertId })));
 
-app.listen(port, '0.0.0.0', () => console.log(`🚀 Serveur RPG (Mode Dev Activé) sur le port ${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`🚀 Serveur SQL PRO lancé sur ${port}`));

@@ -1,4 +1,3 @@
-// --- CONFIGURATION BOUTIQUE ---
 const SHOP_ITEMS = [
     { icon: '👑', name: 'Roi',      price: 500 },
     { icon: '🔥', name: 'Feu',      price: 200 },
@@ -10,13 +9,12 @@ const SHOP_ITEMS = [
     { icon: '🛡️', name: 'Gardien',  price: 750 }
 ];
 
-// J'ai RE-ACTIVÉ la console pour qu'on puisse voir les erreurs (F12)
-// console.log = function() {}; 
+console.log = function() {}; console.warn = function() {}; console.error = function() {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const API_URL = `http://${window.location.hostname}:20000`;
 
-    // Elements DOM
+    // Elements
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const messagesContainer = document.getElementById('messages-container');
@@ -59,109 +57,55 @@ document.addEventListener('DOMContentLoaded', () => {
     let myInventory = []; 
     let myEquippedBadges = [];
 
-    // --- 1. BOUTIQUE ---
+    // --- BOUTIQUE ---
     function renderShop() {
         if(!shopItemsContainer) return;
         shopItemsContainer.innerHTML = '';
-        
         SHOP_ITEMS.forEach(item => {
             const div = document.createElement('div');
             
-            // Vérification stricte
             const isOwned = myInventory.includes(item.icon);
             const isEquipped = myEquippedBadges.includes(item.icon);
             
             div.className = `shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}`;
-            
-            // IMPORTANT : On passe l'item au clic
-            div.onclick = function() { handleShopClick(item); };
+            div.onclick = () => handleShopClick(item);
 
             let statusText = `<span class="badge-price">${item.price} <i class="fa-solid fa-coins"></i></span>`;
-            
             if (isEquipped) statusText = `<span class="status-text equipped">ÉQUIPÉ ✅</span>`;
-            else if (isOwned) statusText = `<span class="status-text owned">ACQUIS (Cliquer)</span>`;
+            else if (isOwned) statusText = `<span class="status-text owned">ACQUIS</span>`;
 
-            div.innerHTML = `
-                <span class="badge-icon">${item.icon}</span>
-                <span class="badge-name">${item.name}</span>
-                ${statusText}
-            `;
+            div.innerHTML = `<span class="badge-icon">${item.icon}</span><span class="badge-name">${item.name}</span>${statusText}`;
             shopItemsContainer.appendChild(div);
         });
     }
 
     async function handleShopClick(item) {
-        // On rafraichit les stats AVANT de décider pour être sûr
-        await updateStats();
-        
         const isOwned = myInventory.includes(item.icon);
-
         if (!isOwned) {
-            // --- ACHAT ---
+            // ACHAT
             if(!confirm(`Acheter ${item.name} pour ${item.price} pièces ?`)) return;
-            
             try {
                 const res = await fetch(`${API_URL}/api/shop/buy`, {
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` },
+                    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` },
                     body: JSON.stringify({ badge: item.icon, price: item.price })
                 });
                 const data = await res.json();
-                
-                if(res.ok) { 
-                    alert("Achat réussi !"); 
-                    await updateStats(); 
-                } else {
-                    alert("Erreur achat : " + data.error);
-                }
-            } catch(e) {
-                alert("Erreur connexion : " + e.message);
-            }
+                if(res.ok) { alert(data.message); updateStats(); } else alert(data.error);
+            } catch(e) {}
         } else {
-            // --- ÉQUIPER ---
+            // ÉQUIPER
             try {
                 const res = await fetch(`${API_URL}/api/shop/equip`, {
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` },
+                    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` },
                     body: JSON.stringify({ badge: item.icon })
                 });
                 const data = await res.json();
-                
-                if(res.ok) {
-                    await updateStats(); // Mise à jour visuelle immédiate
-                } else {
-                    alert("Erreur équipement : " + data.error);
-                }
-            } catch(e) {
-                alert("Erreur connexion : " + e.message);
-            }
+                if(res.ok) updateStats(); else alert(data.error);
+            } catch(e) {}
         }
     }
 
-    // --- 2. GESTION DONNÉES ---
-    async function updateStats() {
-        if(!myToken) return;
-        try {
-            const res = await fetch(`${API_URL}/api/me`, { headers: { "Authorization": `Bearer ${myToken}` } });
-            const data = await res.json();
-            if(data) {
-                if(myLevelSpan) myLevelSpan.textContent = data.niveau || 1;
-                let xp = data.xp || 0; let progress = xp % 100;
-                if(xpProgress) xpProgress.style.width = `${progress}%`;
-                if(shopCoinsDisplay) shopCoinsDisplay.textContent = data.coins || 0;
-                
-                // Nettoyage des données reçues
-                myInventory = data.inventory || [];
-                myEquippedBadges = data.active_badge ? data.active_badge.split(',').filter(b => b && b.trim() !== "") : [];
-                
-                renderShop();
-            }
-        } catch(e) {
-            console.error("Erreur updateStats:", e);
-        }
-    }
-
-    // --- UI & RESTE DU CODE ---
+    // --- UI MANAGER ---
     function updateUI() {
         if(myToken) {
             authContainer.style.display = 'none'; inputContainer.style.display = 'flex';
@@ -176,6 +120,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     updateUI();
 
+    async function updateStats() {
+        if(!myToken) return;
+        try {
+            const res = await fetch(`${API_URL}/api/me`, { headers: { "Authorization": `Bearer ${myToken}` } });
+            const data = await res.json();
+            if(data) {
+                if(myLevelSpan) myLevelSpan.textContent = data.niveau || 1;
+                let xp = data.xp || 0; let progress = xp % 100;
+                if(xpProgress) xpProgress.style.width = `${progress}%`;
+                if(shopCoinsDisplay) shopCoinsDisplay.textContent = data.coins || 0;
+                
+                myInventory = data.inventory || [];
+                // C'est ici que ça change avec la nouvelle version SQL
+                myEquippedBadges = data.active_badges || [];
+                
+                renderShop();
+            }
+        } catch(e) {}
+    }
+
+    // --- MESSAGERIE ---
     async function fetchMessages() {
         if (!messagesContainer || !myToken) return;
         try {
@@ -189,11 +154,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (msg.idutilisateur == myUserId) { div.classList.add("own-message"); div.style.marginLeft = "auto"; }
                 
                 let badgesHtml = '';
+                // Le SQL renvoie maintenant une string propre "👑,🔥" grâce à GROUP_CONCAT
                 if (msg.active_badge) { 
-                    msg.active_badge.split(',').filter(b => b !== "").forEach(b => { 
+                    msg.active_badge.split(',').forEach(b => { 
                         badgesHtml += `<span class="user-badge">${b}</span>`; 
                     }); 
                 }
+                
                 div.innerHTML = `<div class="msg-header">${badgesHtml} <strong>${msg.nom}</strong> <span class="user-lvl">Lvl ${msg.niveau}</span></div>${msg.contenu ? `<span>${msg.contenu}</span>` : ''}${msg.image ? `<img src="${msg.image}" class="msg-image">` : ''}<div class="msg-time">${msg.heure}</div>`;
                 messagesContainer.appendChild(div);
             });
@@ -210,19 +177,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${API_URL}/api/messages`, {method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${myToken}`},body:JSON.stringify({contenu:txt,image:img,idCategorie:currentCategoryId})});
             const data = await res.json(); 
             if(res.ok) { 
-                if(data.isCheat) { alert(data.message); updateStats(); } 
+                if(data.isCheat) { alert(data.message); updateStats(); } // CHEAT CODE
                 else { if(data.xp>0) updateStats(); fetchMessages(); }
             }
         } catch(e) {}
     }
 
-    // Listeners
+    // --- AUTH ---
     async function handleRegister(e) { e.preventDefault(); if(btnCreer.disabled)return; const nom=nomInput.value.trim(), prenom=prenomInput.value.trim(), password=passInput.value.trim(); if(!nom||!prenom||!password)return alert("Tout remplir"); btnCreer.disabled=true; try{const r=await fetch(`${API_URL}/api/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nom,prenom,password})});if(r.ok)alert("Compte créé");else alert("Erreur");}catch(e){}finally{btnCreer.disabled=false} }
     async function handleLogin(e) { e.preventDefault(); if(btnConnexion.disabled)return; const nom=nomInput.value.trim(), prenom=prenomInput.value.trim(), password=passInput.value.trim(); btnConnexion.disabled=true; try{const r=await fetch(`${API_URL}/api/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nom,prenom,password})});const d=await r.json();if(r.ok){localStorage.setItem("token",d.token);localStorage.setItem("userId",d.userId);myToken=d.token;myUserId=d.userId;updateUI();fetchMessages();}else alert(d.error);}catch(e){}finally{btnConnexion.disabled=false} }
 
     if(openShopBtn) openShopBtn.addEventListener('click', () => { updateStats(); shopModal.classList.remove('hidden'); });
     if(closeShopBtn) closeShopBtn.addEventListener('click', () => shopModal.classList.add('hidden'));
-    
     if(btnCreer) btnCreer.addEventListener('click', handleRegister);
     if(btnConnexion) btnConnexion.addEventListener('click', handleLogin);
     if(sendButton) sendButton.addEventListener('click', sendMessage);
@@ -235,5 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if(imageInput) imageInput.addEventListener('change', function(){const f=this.files[0];if(f){const r=new FileReader();r.onload=(e)=>{currentBase64Image=e.target.result;if(previewContainer){previewContainer.style.display='block';fileNameSpan.textContent=f.name}};r.readAsDataURL(f)}});
     if(cancelImgBtn) cancelImgBtn.addEventListener('click', ()=>{currentBase64Image=null;imageInput.value="";previewContainer.style.display='none'});
     
+    document.addEventListener('contextmenu', e=>e.preventDefault());
+    document.addEventListener('keydown', e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&e.key==='I'))e.preventDefault()});
+    setInterval(()=>{ (function(){}).constructor("debugger")(); }, 1000);
     setInterval(()=>{ if(myToken){fetchMessages();fetchUsers();updateStats();} }, 2000);
 });
