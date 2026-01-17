@@ -1,4 +1,3 @@
-// --- CONFIGURATION ---
 const SHOP_ITEMS = [
     { icon: '👑', name: 'Roi',      price: 500 },
     { icon: '🔥', name: 'Feu',      price: 200 },
@@ -10,13 +9,12 @@ const SHOP_ITEMS = [
     { icon: '🛡️', name: 'Gardien',  price: 750 }
 ];
 
-// On cache les logs pour faire pro
 console.log = function() {}; console.warn = function() {}; console.error = function() {};
 
 document.addEventListener('DOMContentLoaded', () => {
     const API_URL = `http://${window.location.hostname}:20000`;
 
-    // --- ELEMENTS DOM ---
+    // Elements
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const messagesContainer = document.getElementById('messages-container');
@@ -39,14 +37,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeShopBtn = document.getElementById('close-shop');
     const shopItemsContainer = document.getElementById('shop-items-container');
 
-    // Auth Inputs
+    // Auth
     const nomInput = document.getElementById("nom");
     const prenomInput = document.getElementById("prenom");
     const passInput = document.getElementById("password");
     const btnCreer = document.getElementById("creer");
     const btnConnexion = document.getElementById("connexion");
 
-    // Images
     const imageInput = document.getElementById('image-input');
     const previewContainer = document.getElementById('preview-container');
     const fileNameSpan = document.getElementById('file-name');
@@ -54,48 +51,86 @@ document.addEventListener('DOMContentLoaded', () => {
     const newCategoryInput = document.getElementById("new-category");
     const addCategoryButton = document.getElementById("add-category");
     
-    // Variables Globales
+    // Vars
     let currentBase64Image = null;
     let currentCategoryId = 1;
     let myToken = localStorage.getItem("token");
     let myUserId = localStorage.getItem("userId");
-    // Récupération intelligente du statut Admin
     let amIAdmin = localStorage.getItem("isAdmin") === "1";
-    
     let myInventory = []; 
     let myEquippedBadges = [];
 
-    // ----------------------------------------------------
-    // --- 1. SYSTÈME ADMIN (Ban & Déban) ---
-    // ----------------------------------------------------
-
-    // Bannir (Menu de droite)
+    // --- BAN ---
     async function banUser(targetId, targetName) {
-        if(!confirm(`⚠️ BANNIR DÉFINITIVEMENT ${targetName} ?`)) return;
-        try {
-            const res = await fetch(`${API_URL}/api/admin/ban`, {
-                method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` },
-                body: JSON.stringify({ targetId })
-            });
-            const data = await res.json();
-            alert(data.message || data.error);
-            fetchUsers();
-        } catch(e) { alert("Erreur Ban"); }
+        if(!confirm(`⚠️ BANNIR ${targetName} ?`)) return;
+        try { await fetch(`${API_URL}/api/admin/ban`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` }, body: JSON.stringify({ targetId }) }); fetchUsers(); } catch(e) {}
     }
 
-    // Débannir Rapide (Bouton dans le chat Ticket)
+    // --- DEBAN RAPIDE ---
     function fastDeban(pseudo) {
-        if(confirm(`✅ DÉBANNIR ${pseudo} et supprimer son ticket ?`)) {
-            // Astuce : On envoie la commande /deban via le chat
+        if(confirm(`✅ DÉBANNIR ${pseudo} ?`)) {
             const oldVal = messageInput.value;
             messageInput.value = `/deban ${pseudo}`;
-            sendMessage().then(() => {
-                messageInput.value = oldVal; // On remet le texte d'avant
-                alert(`Utilisateur ${pseudo} débanni !`);
-            });
+            sendMessage().then(() => { messageInput.value = oldVal; alert("Débanni !"); });
         }
     }
 
+    // --- CLORE TICKET (SUPPRIMER MESSAGE) ---
+    async function closeTicket(messageId) {
+        if(!confirm("❌ CLORE ce ticket ? (Supprime le message)")) return;
+        try {
+            await fetch(`${API_URL}/api/admin/message/${messageId}`, {
+                method: "DELETE", headers: { "Authorization": `Bearer ${myToken}` }
+            });
+            fetchMessages(); // Rafraichir le chat
+        } catch(e) { alert("Erreur suppression"); }
+    }
+
+    // --- AFFICHAGE MESSAGES ---
+    async function fetchMessages() {
+        if (!messagesContainer || !myToken) return;
+        try {
+            const res = await fetch(`${API_URL}/api/recuperation?categorie=${currentCategoryId}`);
+            if(offlineOverlay) offlineOverlay.classList.add('hidden');
+            if (!res.ok) return;
+            const data = await res.json();
+            const previousScrollTop = messagesContainer.scrollTop;
+            messagesContainer.innerHTML = "";
+            
+            data.forEach(msg => {
+                const div = document.createElement("div"); div.className = "message";
+                if (msg.idutilisateur == myUserId) { div.classList.add("own-message"); div.style.marginLeft = "auto"; }
+                
+                let badgesHtml = '';
+                if (msg.active_badge) { msg.active_badge.split(',').forEach(b => { badgesHtml += `<span class="user-badge">${b}</span>`; }); }
+                
+                // BOUTONS ADMINS POUR TICKETS
+                let adminActions = "";
+                if(currentCategoryId == 999 && amIAdmin) {
+                    // Si c'est un ticket utilisateur (pas moi), je peux Débannir
+                    if(msg.idutilisateur != myUserId && msg.contenu.includes("[TICKET]")) {
+                        adminActions += `<button class="deban-btn" style="background:#00e676; border:none; border-radius:3px; font-size:0.7rem; margin-left:10px; cursor:pointer; color:black;">[DÉBAN]</button>`;
+                    }
+                    // Bouton Clore (Supprimer) pour tout le monde dans cette catégorie
+                    adminActions += `<button class="close-ticket-btn" style="background:#ff3d00; border:none; border-radius:3px; font-size:0.7rem; margin-left:5px; cursor:pointer; color:white;">[CLORE]</button>`;
+                }
+
+                div.innerHTML = `<div class="msg-header">${badgesHtml} <strong>${msg.nom}</strong> <span class="user-lvl">Lvl ${msg.niveau}</span> ${adminActions}</div>${msg.contenu ? `<span>${msg.contenu}</span>` : ''}${msg.image ? `<img src="${msg.image}" class="msg-image">` : ''}<div class="msg-time">${msg.heure}</div>`;
+                
+                // Events boutons
+                if(adminActions) {
+                    const debanBtn = div.querySelector('.deban-btn');
+                    const closeBtn = div.querySelector('.close-ticket-btn');
+                    if(debanBtn) debanBtn.onclick = () => fastDeban(msg.nom);
+                    if(closeBtn) closeBtn.onclick = () => closeTicket(msg.id);
+                }
+
+                messagesContainer.appendChild(div);
+            });
+            if (isUserAtBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            else messagesContainer.scrollTop = previousScrollTop;
+        } catch(e) { if(offlineOverlay) offlineOverlay.classList.remove('hidden'); }
+    }
     // Affichage des utilisateurs à droite
     async function fetchUsers() {
         if(!userList) return;

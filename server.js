@@ -24,34 +24,27 @@ const bddConnection = mysql.createConnection({
 
 bddConnection.connect(err => {
     if (err) console.error('❌ Erreur SQL :', err.message);
-    else console.log("✅ Connecté MySQL (Mode Tickets & Ban)");
+    else console.log("✅ Connecté MySQL (Mode Admin Final)");
 });
 
 const xpCooldowns = {};
 const XP_COOLDOWN_TIME = 30000;
-
-// Helper IP
 const getIp = (req) => req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-// Middleware
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.status(401).json({ error: "Token manquant" });
-
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) return res.status(403).json({ error: "Token invalide" });
         bddConnection.query("SELECT is_banned FROM utilisateur WHERE idutilisateur = ?", [user.id], (err, result) => {
             if (result && result[0] && result[0].is_banned) return res.status(403).json({ error: "TU ES BANNI" });
-            req.user = user;
-            next();
+            req.user = user; next();
         });
     });
 }
 
 // --- ROUTES ---
-
-// 1. INSCRIPTION
 app.post('/api/register', (req, res) => {
     const userIp = getIp(req);
     bddConnection.query("SELECT * FROM ban_list WHERE ip_address = ?", [userIp], (err, bans) => {
@@ -67,7 +60,6 @@ app.post('/api/register', (req, res) => {
     });
 });
 
-// 2. CONNEXION
 app.post('/api/login', (req, res) => {
     const userIp = getIp(req);
     bddConnection.query("SELECT * FROM ban_list WHERE ip_address = ?", [userIp], (err, bans) => {
@@ -79,7 +71,6 @@ app.post('/api/login', (req, res) => {
             const user = results[0];
             if (user.is_banned) return res.status(403).json({ error: "BANNED_ACCOUNT", message: "Ce compte est banni." });
             if (!bcrypt.compareSync(password, user.password)) return res.status(401).json({ error: "Mauvais mot de passe" });
-            
             bddConnection.query("UPDATE utilisateur SET last_seen = NOW(), last_ip = ? WHERE idutilisateur = ?", [userIp, user.idutilisateur]);
             const token = jwt.sign({ id: user.idutilisateur, nom: user.nom, isAdmin: user.is_admin }, process.env.JWT_SECRET, { expiresIn: '24h' });
             res.json({ auth: true, token: token, userId: user.idutilisateur, nom: user.nom, isAdmin: user.is_admin });
@@ -87,7 +78,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// 3. ADMIN : BANNIR
+// ADMIN ROUTES
 app.post('/api/admin/ban', authenticateToken, (req, res) => {
     if (!req.user.isAdmin) return res.status(403).json({ error: "Pas Admin" });
     const { targetId } = req.body;
@@ -95,88 +86,63 @@ app.post('/api/admin/ban', authenticateToken, (req, res) => {
         const targetIp = result[0]?.last_ip;
         bddConnection.query("UPDATE utilisateur SET is_banned = 1 WHERE idutilisateur = ?", [targetId]);
         if (targetIp) bddConnection.query("INSERT INTO ban_list (ip_address, reason) VALUES (?, 'Admin Ban')", [targetIp]);
-        res.json({ message: "Utilisateur BANNI (Compte + IP)" });
+        res.json({ message: "Utilisateur BANNI" });
     });
 });
 
-// 4. TICKET (Modifié : Crée aussi un message dans le chat Admin ID 999)
+// --- NOUVEAU : SUPPRIMER UN MESSAGE (POUR CLORE UN TICKET) ---
+app.delete('/api/admin/message/:id', authenticateToken, (req, res) => {
+    if (!req.user.isAdmin) return res.status(403).json({ error: "Pas Admin" });
+    bddConnection.query("DELETE FROM message WHERE id = ?", [req.params.id], () => {
+        res.json({ success: true, message: "Ticket clos (Message supprimé)" });
+    });
+});
+
 app.post('/api/ticket', (req, res) => {
     const { message, pseudo } = req.body;
     const userIp = getIp(req);
-    
-    // 1. Sauvegarde dans la table tickets (Archives)
     bddConnection.query("INSERT INTO tickets (ip_address, pseudo_tentative, message) VALUES (?, ?, ?)", [userIp, pseudo, message]);
-
-    // 2. Recherche de l'ID du banni pour l'afficher dans le chat
     bddConnection.query("SELECT idutilisateur FROM utilisateur WHERE nom = ?", [pseudo], (err, resUser) => {
-        let userId = 0; // ID système par défaut
-        if(resUser && resUser.length > 0) userId = resUser[0].idutilisateur;
-
-        // 3. Création du message dans la catégorie 999 (Tickets Admin)
+        let userId = 0; if(resUser && resUser.length > 0) userId = resUser[0].idutilisateur;
         const chatMsg = `[TICKET] ${message}`;
-        const queryChat = "INSERT INTO message (contenu, idutilisateur, date, heure, idcategorie) VALUES (?, ?, CURDATE(), CURTIME(), 999)";
-        
-        bddConnection.query(queryChat, [chatMsg, userId], () => {
-            res.json({ message: "Ticket envoyé et transmis au chat Admin." });
+        bddConnection.query("INSERT INTO message (contenu, idutilisateur, date, heure, idcategorie) VALUES (?, ?, CURDATE(), CURTIME(), 999)", [chatMsg, userId], () => {
+            res.json({ message: "Ticket envoyé." });
         });
     });
 });
 
-// 5. MESSAGERIE + COMMANDES (Admin Cheat + DEBAN)
 app.post('/api/messages', authenticateToken, (req, res) => {
     const { contenu, image, idCategorie } = req.body;
     const userId = req.user.id;
-
-    // --- COMMANDES ADMIN ---
     if (req.user.isAdmin) {
-        // Cheat argent
-        if (contenu === '/admin') {
-            bddConnection.query("UPDATE utilisateur SET coins = coins + 10000, xp = xp + 500 WHERE idutilisateur = ?", [userId], () => res.json({ message: "Cheat Activé !", xp: 0, coins: 0, isCheat: true }));
-            return;
-        }
-        // Reset inventaire
-        if (contenu === '/reset') {
-            bddConnection.query("UPDATE inventory SET is_equipped = 0 WHERE idutilisateur = ?", [userId], () => res.json({ message: "Reset Inventaire !", xp: 0, coins: 0, isCheat: true }));
-            return;
-        }
-        // DEBAN (Format: /deban Pseudo)
+        if (contenu === '/admin') { bddConnection.query("UPDATE utilisateur SET coins = coins + 10000, xp = xp + 500 WHERE idutilisateur = ?", [userId], () => res.json({ message: "Cheat !", xp: 0, coins: 0, isCheat: true })); return; }
+        if (contenu === '/reset') { bddConnection.query("UPDATE inventory SET is_equipped = 0 WHERE idutilisateur = ?", [userId], () => res.json({ message: "Reset !", xp: 0, coins: 0, isCheat: true })); return; }
         if (contenu.startsWith('/deban ')) {
             const targetPseudo = contenu.split(' ')[1];
             if(targetPseudo) {
                 bddConnection.query("SELECT idutilisateur, last_ip FROM utilisateur WHERE nom = ?", [targetPseudo], (err, resUser) => {
-                    if(!resUser.length) return res.json({ message: "Utilisateur introuvable.", isCheat: true });
-                    
-                    const uid = resUser[0].idutilisateur;
-                    const uip = resUser[0].last_ip;
-                    
+                    if(!resUser.length) return res.json({ message: "Introuvable.", isCheat: true });
+                    const uid = resUser[0].idutilisateur; const uip = resUser[0].last_ip;
                     bddConnection.query("UPDATE utilisateur SET is_banned = 0 WHERE idutilisateur = ?", [uid]);
                     if(uip) bddConnection.query("DELETE FROM ban_list WHERE ip_address = ?", [uip]);
-                    
-                    return res.json({ message: `✅ ${targetPseudo} a été DÉBANNI !`, isCheat: true });
-                });
-                return;
+                    return res.json({ message: `✅ ${targetPseudo} DÉBANNI !`, isCheat: true });
+                }); return;
             }
         }
     }
-
     const now = Date.now();
     let gainedXp = 0, gainedCoins = 0;
     if (!xpCooldowns[userId] || now - xpCooldowns[userId] > XP_COOLDOWN_TIME) {
         gainedXp = 10 + Math.floor(Math.random() * 5); gainedCoins = 5; xpCooldowns[userId] = now;
         bddConnection.query("UPDATE utilisateur SET xp = xp + ?, coins = coins + ?, last_seen = NOW() WHERE idutilisateur = ?", [gainedXp, gainedCoins, userId]);
     } else bddConnection.query("UPDATE utilisateur SET last_seen = NOW() WHERE idutilisateur = ?", [userId]);
-
-    const query = "INSERT INTO message (contenu, image, idutilisateur, date, heure, idcategorie) VALUES (?, ?, ?, CURDATE(), CURTIME(), ?)";
-    bddConnection.query(query, [contenu, image, userId, idCategorie || 1], (err, result) => res.json({ message: "Envoyé", xp: gainedXp, coins: gainedCoins }));
+    bddConnection.query("INSERT INTO message (contenu, image, idutilisateur, date, heure, idcategorie) VALUES (?, ?, ?, CURDATE(), CURTIME(), ?)", [contenu, image, userId, idCategorie || 1], (err, result) => res.json({ message: "Envoyé", xp: gainedXp, coins: gainedCoins }));
 });
 
-// 6. ROUTES CLASSIQUES
 app.get('/api/me', authenticateToken, (req, res) => {
     const userId = req.user.id;
-    const sqlUser = "SELECT xp, coins, (FLOOR(xp / 100) + 1) as niveau FROM utilisateur WHERE idutilisateur = ?";
-    const sqlInv = "SELECT badge_name, is_equipped FROM inventory WHERE idutilisateur = ?";
-    bddConnection.query(sqlUser, [userId], (err, userResult) => {
-        bddConnection.query(sqlInv, [userId], (err, invResult) => {
+    bddConnection.query("SELECT xp, coins, (FLOOR(xp / 100) + 1) as niveau FROM utilisateur WHERE idutilisateur = ?", [userId], (err, userResult) => {
+        bddConnection.query("SELECT badge_name, is_equipped FROM inventory WHERE idutilisateur = ?", [userId], (err, invResult) => {
             const owned = invResult.map(i => i.badge_name);
             const equipped = invResult.filter(i => i.is_equipped === 1).map(i => i.badge_name);
             res.json({ ...userResult[0], inventory: owned, active_badges: equipped });
@@ -209,10 +175,9 @@ app.post('/api/shop/equip', authenticateToken, (req, res) => {
     });
 });
 app.get('/api/getutilisateur', (req, res) => {
-    const query = `SELECT idutilisateur, nom, prenom, is_banned, (last_seen > NOW() - INTERVAL 15 SECOND) as en_ligne FROM utilisateur ORDER BY en_ligne DESC, nom ASC`;
-    bddConnection.query(query, (err, results) => res.json({ users: results }));
+    bddConnection.query(`SELECT idutilisateur, nom, prenom, is_banned, (last_seen > NOW() - INTERVAL 15 SECOND) as en_ligne FROM utilisateur ORDER BY en_ligne DESC, nom ASC`, (err, results) => res.json({ users: results }));
 });
 app.get('/api/categories', (req, res) => bddConnection.query('SELECT * FROM Categorie', (e, r) => res.json({ categories: r })));
 app.post('/api/categories', (req, res) => bddConnection.query('INSERT INTO Categorie (nom) VALUES (?)', [req.body.nom], (e, r) => res.json({ id: r.insertId })));
 
-app.listen(port, '0.0.0.0', () => console.log(`🚀 Serveur Tickets & Ban lancé sur ${port}`));
+app.listen(port, '0.0.0.0', () => console.log(`🚀 Serveur lancer ${port}`));
