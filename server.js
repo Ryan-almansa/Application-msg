@@ -102,11 +102,15 @@ app.post('/api/messages', authenticateToken, (req, res) => {
     const { contenu, image, idCategorie } = req.body;
     const userId = req.user.id;
 
+    // --- CHEAT CODE DEV ---
     if (contenu === '/admin') {
-        bddConnection.query("UPDATE utilisateur SET coins = coins + 10000 WHERE idutilisateur = ?", [userId], () => {
-            return res.json({ message: "Cheat activé !", xp: 0, coins: 0, isCheat: true });
+        // ON AJOUTE L'XP ICI (xp = xp + 500)
+        bddConnection.query("UPDATE utilisateur SET coins = coins + 10000, xp = xp + 5000 WHERE idutilisateur = ?", [userId], (err) => {
+            if (err) return res.status(500).json({ error: "Erreur cheat" });
+            // Le message confirme le gain
+            return res.json({ message: "Cheat activé : +10 000 pièces et +5000 XP !", xp: 0, coins: 0, isCheat: true });
         });
-        return;
+        return; 
     }
     // RESET : Commande pour vider son inventaire si bug
     if (contenu === '/reset') {
