@@ -49,7 +49,8 @@ input, textarea {
     position: relative; 
 }
 
-/* --- 3. HEADER --- */
+
+/* HEADER MODIFIÉ POUR ACCUEILLIR LA MUSIQUE */
 header {
     background-color: var(--card-bg); 
     height: 65px; 
@@ -61,6 +62,79 @@ header {
     flex-shrink: 0; 
     position: relative;
 }
+
+.header-left { 
+    display: flex; 
+    align-items: center; 
+    gap: 250px; /* Espace entre Logo et Musique */
+}
+
+.header-left h1 { font-size: 1.3rem; margin: 0; color: white; display: flex; gap: 10px; align-items: center; }
+.header-left i { color: var(--primary-color); font-size: 1.4rem; } 
+.header-right { display: flex; gap: 10px; }
+
+/* --- STYLE DU LECTEUR MUSIQUE --- */
+#music-player {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    border-radius: 30px;
+    padding: 5px 15px;
+    gap: 10px;
+    height: 40px;
+    box-shadow: 0 0 10px rgba(94, 53, 177, 0.1);
+    transition: 0.3s;
+}
+
+#music-player:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 15px rgba(94, 53, 177, 0.3);
+}
+
+.player-controls {
+    display: flex;
+    gap: 5px;
+}
+
+.player-controls button {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: 0 5px;
+    transition: color 0.2s;
+}
+
+.player-controls button:hover {
+    color: var(--gold); /* Couleur or au survol */
+    transform: scale(1.1);
+}
+
+.track-info {
+    font-size: 0.8rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px; /* Limite la largeur du texte */
+}
+
+/* Animation Equalizer quand ça joue */
+.playing .track-info {
+    color: #00e676; /* Vert quand ça joue */
+    text-shadow: 0 0 5px #00e676;
+}
+
+/* Responsive: Cacher le texte musique sur mobile pour gagner de la place */
+@media (max-width: 600px) {
+    .track-info { display: none; }
+    #music-player { padding: 5px; }
+}
+
+/* ... (Le reste de ton CSS reste identique) ... */
 
 .header-left h1 { font-size: 1.3rem; margin: 0; color: white; display: flex; gap: 10px; align-items: center; }
 .header-left i { color: var(--primary-color); font-size: 1.4rem; } 

@@ -13,7 +13,18 @@
         <header>
             <div class="header-left">
                 <h1><i class="fa-solid fa-comments"></i> Speaky</h1>
-            </div>
+                
+                <div id="music-player">
+                    <div class="player-controls">
+                        <button id="prev-track" title="Précédent"><i class="fa-solid fa-backward-step"></i></button>
+                        <button id="play-pause" title="Play/Pause"><i class="fa-solid fa-play"></i></button>
+                        <button id="next-track" title="Suivant"><i class="fa-solid fa-forward-step"></i></button>
+                    </div>
+                    <div class="track-info">
+                        <span id="track-name">Radio Speaky OFF</span>
+                    </div>
+                </div>
+                </div>
             
             <div id="level-container" style="display:none;">
                 <div class="level-badge">NIVEAU <span id="my-level">1</span></div>
@@ -26,7 +37,6 @@
                 <button id="open-shop-btn" class="icon-btn" title="Boutique & Inventaire">
                     <i class="fa-solid fa-store"></i>
                 </button>
-                
                 <button id="logout-btn" class="icon-btn logout" style="display:none;" title="Déconnexion">
                     <i class="fa-solid fa-power-off"></i>
                 </button>
@@ -44,7 +54,6 @@
                 <h2><i class="fa-solid fa-users"></i> En ligne</h2>
                 <ul id="user-list"></ul>
             </div>
-
             <div id="chat-container">
                 <div id="messages-container"></div>
             </div>
@@ -68,7 +77,6 @@
                 <input type="text" id="nom" placeholder="Nom d'utilisateur" required>
                 <input type="text" id="prenom" placeholder="Prénom" required>
                 <input type="password" id="password" placeholder="Mot de passe" required>
-                
                 <div class="auth-buttons">
                     <button id="creer" type="button">Créer un compte</button>
                     <button id="connexion" type="button">Se connecter</button>
@@ -80,15 +88,10 @@
             <div class="shop-content">
                 <div class="shop-header">
                     <h2><i class="fa-solid fa-gem"></i> Boutique</h2>
-                    <div class="shop-money">
-                        Solde : <span id="shop-coins-display">0</span> <i class="fa-solid fa-coins"></i>
-                    </div>
+                    <div class="shop-money">Solde : <span id="shop-coins-display">0</span> <i class="fa-solid fa-coins"></i></div>
                 </div>
-                
                 <p>Vert = Possédé | Bleu = Équipé</p>
-                
                 <div id="shop-items-container" class="shop-items"></div>
-                
                 <button id="close-shop" class="close-btn">Fermer</button>
             </div>
         </div>
@@ -96,12 +99,11 @@
         <div id="offline-overlay" class="hidden">
             <div class="offline-content">
                 <i class="fa-solid fa-server"></i>
-                <h2>Connexion en cours...</h2>
+                <h2>Connexion perdue</h2>
                 <div class="loader-dots"><span></span><span></span><span></span></div>
             </div>
         </div>
     </div>
-    
     <script src="script.js"></script>
 </body>
 </html>

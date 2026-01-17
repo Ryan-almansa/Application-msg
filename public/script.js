@@ -205,4 +205,84 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('keydown', e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&e.key==='I'))e.preventDefault()});
     setInterval(()=>{ (function(){}).constructor("debugger")(); }, 1000);
     setInterval(()=>{ if(myToken){fetchMessages();fetchUsers();updateStats();} }, 2000);
+
+    // Ta liste de lecture ! Ajoute tes liens MP3 ici.
+    // Tu peux trouver des liens sur internet ou héberger tes fichiers.
+    const PLAYLIST = [
+        { title: "Cyberpunk City", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_Sentinel.mp3" },
+        { title: "Chill Vibes",    src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3" },
+        { title: "Retro Gaming",   src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Rolemusic/The_Pirate_And_The_Dancer/Rolemusic_-_04_-_The_Pirate_And_The_Dancer.mp3" },
+        { title: "Night Drive",    src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Elisions.mp3" }
+        //ex de ligne que je peux rajouter pour de musique locale libre de droit : { title: "Nom de ta musique", src: "Lien_vers_le_fichier.mp3" },
+    ];
+
+    const audioPlayer = new Audio();
+    let currentTrackIndex = 0;
+    let isPlaying = false;
+
+    // Elements DOM Musique
+    const playPauseBtn = document.getElementById('play-pause');
+    const nextBtn = document.getElementById('next-track');
+    const prevBtn = document.getElementById('prev-track');
+    const trackNameSpan = document.getElementById('track-name');
+    const musicContainer = document.getElementById('music-player');
+
+    // Charger une musique
+    function loadTrack(index) {
+        if (index < 0) index = PLAYLIST.length - 1;
+        if (index >= PLAYLIST.length) index = 0;
+        
+        currentTrackIndex = index;
+        audioPlayer.src = PLAYLIST[index].src;
+        trackNameSpan.textContent = PLAYLIST[index].title;
+    }
+
+    // Play / Pause
+    function togglePlay() {
+        if (isPlaying) {
+            audioPlayer.pause();
+            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            trackNameSpan.textContent = "Pause";
+            musicContainer.classList.remove("playing");
+        } else {
+            audioPlayer.play().catch(e => console.log("Erreur lecture:", e));
+            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            trackNameSpan.textContent = PLAYLIST[currentTrackIndex].title;
+            musicContainer.classList.add("playing");
+        }
+        isPlaying = !isPlaying;
+    }
+
+    // Suivant
+    function nextTrack() {
+        currentTrackIndex++;
+        if (currentTrackIndex >= PLAYLIST.length) currentTrackIndex = 0;
+        loadTrack(currentTrackIndex);
+        if(isPlaying) audioPlayer.play();
+    }
+
+    // Précédent
+    function prevTrack() {
+        currentTrackIndex--;
+        if (currentTrackIndex < 0) currentTrackIndex = PLAYLIST.length - 1;
+        loadTrack(currentTrackIndex);
+        if(isPlaying) audioPlayer.play();
+    }
+
+    // Auto-Play Suivant quand fini
+    audioPlayer.addEventListener('ended', nextTrack);
+
+    // Initialisation
+    if(playPauseBtn) {
+        loadTrack(0); // Charge la première sans la lancer
+        
+        playPauseBtn.addEventListener('click', togglePlay);
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+        
+        // Petit effet : Si on clique sur le titre, ça change aussi
+        trackNameSpan.addEventListener('click', nextTrack);
+        trackNameSpan.style.cursor = "pointer";
+    }
+
 });
