@@ -18,14 +18,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageInput = document.getElementById('message-input');
     const sendButton = document.getElementById('send-button');
     const messagesContainer = document.getElementById('messages-container');
+    const scrollDownBtn = document.getElementById('scroll-down-btn');
     const categorySelector = document.getElementById("category-selector");
     const userList = document.getElementById('user-list');
     const authContainer = document.getElementById('auth-container');
     const inputContainer = document.getElementById('input-container');
     const logoutBtn = document.getElementById('logout-btn');
     const offlineOverlay = document.getElementById('offline-overlay');
+    const bannedOverlay = document.getElementById('banned-overlay');
 
-    // Stats & Shop
+    // Stats, Shop, Auth... (Comme avant)
     const levelContainer = document.getElementById('level-container');
     const myLevelSpan = document.getElementById('my-level');
     const xpProgress = document.getElementById('xp-progress');
@@ -34,14 +36,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const openShopBtn = document.getElementById('open-shop-btn');
     const closeShopBtn = document.getElementById('close-shop');
     const shopItemsContainer = document.getElementById('shop-items-container');
-
-    // Auth
     const nomInput = document.getElementById("nom");
     const prenomInput = document.getElementById("prenom");
     const passInput = document.getElementById("password");
     const btnCreer = document.getElementById("creer");
     const btnConnexion = document.getElementById("connexion");
-
     const imageInput = document.getElementById('image-input');
     const previewContainer = document.getElementById('preview-container');
     const fileNameSpan = document.getElementById('file-name');
@@ -53,94 +52,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentCategoryId = 1;
     let myToken = localStorage.getItem("token");
     let myUserId = localStorage.getItem("userId");
-    
+    let amIAdmin = localStorage.getItem("isAdmin") === "1";
     let myInventory = []; 
     let myEquippedBadges = [];
 
-    // --- BOUTIQUE ---
-    function renderShop() {
-        if(!shopItemsContainer) return;
-        shopItemsContainer.innerHTML = '';
-        SHOP_ITEMS.forEach(item => {
-            const div = document.createElement('div');
-            
-            const isOwned = myInventory.includes(item.icon);
-            const isEquipped = myEquippedBadges.includes(item.icon);
-            
-            div.className = `shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}`;
-            div.onclick = () => handleShopClick(item);
-
-            let statusText = `<span class="badge-price">${item.price} <i class="fa-solid fa-coins"></i></span>`;
-            if (isEquipped) statusText = `<span class="status-text equipped">ÉQUIPÉ ✅</span>`;
-            else if (isOwned) statusText = `<span class="status-text owned">ACQUIS</span>`;
-
-            div.innerHTML = `<span class="badge-icon">${item.icon}</span><span class="badge-name">${item.name}</span>${statusText}`;
-            shopItemsContainer.appendChild(div);
-        });
+    // --- BAN ---
+    async function banUser(targetId, targetName) {
+        if(!confirm(`BANNIR ${targetName} ?`)) return;
+        try { await fetch(`${API_URL}/api/admin/ban`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` }, body: JSON.stringify({ targetId }) }); fetchUsers(); } catch(e) {}
     }
 
-    async function handleShopClick(item) {
-        const isOwned = myInventory.includes(item.icon);
-        if (!isOwned) {
-            // ACHAT
-            if(!confirm(`Acheter ${item.name} pour ${item.price} pièces ?`)) return;
-            try {
-                const res = await fetch(`${API_URL}/api/shop/buy`, {
-                    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` },
-                    body: JSON.stringify({ badge: item.icon, price: item.price })
-                });
-                const data = await res.json();
-                if(res.ok) { alert(data.message); updateStats(); } else alert(data.error);
-            } catch(e) {}
-        } else {
-            // ÉQUIPER
-            try {
-                const res = await fetch(`${API_URL}/api/shop/equip`, {
-                    method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` },
-                    body: JSON.stringify({ badge: item.icon })
-                });
-                const data = await res.json();
-                if(res.ok) updateStats(); else alert(data.error);
-            } catch(e) {}
+    // --- DEBAN AUTOMATIQUE (Bouton dans le chat) ---
+    function fastDeban(pseudo) {
+        if(confirm(`Débannir ${pseudo} ?`)) {
+            // On envoie la commande /deban comme si on l'avait tapée
+            messageInput.value = `/deban ${pseudo}`;
+            sendMessage();
         }
     }
 
-    // --- UI MANAGER ---
-    function updateUI() {
-        if(myToken) {
-            authContainer.style.display = 'none'; inputContainer.style.display = 'flex';
-            if(logoutBtn) logoutBtn.style.display = 'flex';
-            if(levelContainer) levelContainer.style.display = 'flex';
-            fetchCategories(); fetchUsers(); updateStats();
-        } else {
-            authContainer.style.display = 'block'; inputContainer.style.display = 'none';
-            if(logoutBtn) logoutBtn.style.display = 'none';
-            if(levelContainer) levelContainer.style.display = 'none';
-        }
-    }
-    updateUI();
-
-    async function updateStats() {
-        if(!myToken) return;
-        try {
-            const res = await fetch(`${API_URL}/api/me`, { headers: { "Authorization": `Bearer ${myToken}` } });
-            const data = await res.json();
-            if(data) {
-                if(myLevelSpan) myLevelSpan.textContent = data.niveau || 1;
-                let xp = data.xp || 0; let progress = xp % 100;
-                if(xpProgress) xpProgress.style.width = `${progress}%`;
-                if(shopCoinsDisplay) shopCoinsDisplay.textContent = data.coins || 0;
-                
-                myInventory = data.inventory || [];
-                // C'est ici que ça change avec la nouvelle version SQL
-                myEquippedBadges = data.active_badges || [];
-                
-                renderShop();
-            }
-        } catch(e) {}
-    }
-
-    // --- MESSAGERIE ---
+    // --- AFFICHAGE MESSAGES (Modifié pour les Tickets) ---
     async function fetchMessages() {
         if (!messagesContainer || !myToken) return;
         try {
@@ -148,44 +79,87 @@ document.addEventListener('DOMContentLoaded', () => {
             if(offlineOverlay) offlineOverlay.classList.add('hidden');
             if (!res.ok) return;
             const data = await res.json();
+            const previousScrollTop = messagesContainer.scrollTop;
             messagesContainer.innerHTML = "";
             data.forEach(msg => {
                 const div = document.createElement("div"); div.className = "message";
                 if (msg.idutilisateur == myUserId) { div.classList.add("own-message"); div.style.marginLeft = "auto"; }
                 
                 let badgesHtml = '';
-                // Le SQL renvoie maintenant une string propre "👑,🔥" grâce à GROUP_CONCAT
-                if (msg.active_badge) { 
-                    msg.active_badge.split(',').forEach(b => { 
-                        badgesHtml += `<span class="user-badge">${b}</span>`; 
-                    }); 
-                }
+                if (msg.active_badge) { msg.active_badge.split(',').forEach(b => { badgesHtml += `<span class="user-badge">${b}</span>`; }); }
                 
-                div.innerHTML = `<div class="msg-header">${badgesHtml} <strong>${msg.nom}</strong> <span class="user-lvl">Lvl ${msg.niveau}</span></div>${msg.contenu ? `<span>${msg.contenu}</span>` : ''}${msg.image ? `<img src="${msg.image}" class="msg-image">` : ''}<div class="msg-time">${msg.heure}</div>`;
+                // Si on est dans la catégorie TICKETS (999) et qu'on est admin, on ajoute un bouton DEBAN
+                let ticketAction = "";
+                if(currentCategoryId == 999 && amIAdmin && msg.idutilisateur != myUserId) {
+                    ticketAction = `<button class="deban-btn" style="background:#00e676; border:none; border-radius:3px; font-size:0.7rem; margin-left:10px; cursor:pointer;">[DÉBANNIR]</button>`;
+                }
+
+                div.innerHTML = `<div class="msg-header">${badgesHtml} <strong>${msg.nom}</strong> <span class="user-lvl">Lvl ${msg.niveau}</span> ${ticketAction}</div>${msg.contenu ? `<span>${msg.contenu}</span>` : ''}${msg.image ? `<img src="${msg.image}" class="msg-image">` : ''}<div class="msg-time">${msg.heure}</div>`;
+                
+                // Event Listener pour le bouton Débannir
+                if(ticketAction) {
+                    div.querySelector('.deban-btn').onclick = () => fastDeban(msg.nom);
+                }
+
                 messagesContainer.appendChild(div);
             });
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            if (isUserAtBottom) messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            else messagesContainer.scrollTop = previousScrollTop;
         } catch(e) { if(offlineOverlay) offlineOverlay.classList.remove('hidden'); }
     }
 
-    async function sendMessage() {
-        if(!myToken) return alert("Pas connecté");
-        const txt = messageInput.value.trim(); const img = currentBase64Image;
-        if (!txt && !img) return;
-        messageInput.value = ""; currentBase64Image = null; imageInput.value = ""; if(previewContainer) previewContainer.style.display='none';
-        try {
-            const res = await fetch(`${API_URL}/api/messages`, {method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${myToken}`},body:JSON.stringify({contenu:txt,image:img,idCategorie:currentCategoryId})});
-            const data = await res.json(); 
-            if(res.ok) { 
-                if(data.isCheat) { alert(data.message); updateStats(); } // CHEAT CODE
-                else { if(data.xp>0) updateStats(); fetchMessages(); }
+    // --- CATÉGORIES (Filtre tickets) ---
+    async function fetchCategories(){
+        try{
+            const r=await fetch(`${API_URL}/api/categories`);
+            const d=await r.json();
+            if(categorySelector){
+                categorySelector.innerHTML="";
+                d.categories.forEach(c=>{
+                    // ON AFFICHE LES TICKETS (ID 999) QUE SI ON EST ADMIN
+                    if(c.idcategorie === 999 && !amIAdmin) return; 
+
+                    const o=document.createElement("option");
+                    o.value=c.idcategorie;
+                    o.textContent=c.nom;
+                    if(c.idcategorie == currentCategoryId) o.selected = true;
+                    categorySelector.appendChild(o);
+                });
             }
-        } catch(e) {}
+        }catch(e){}
     }
 
+    // ... (Tout le reste est standard : sendMessage, fetchUsers, Auth...)
+    // Copie le reste standard ici pour que ça fonctionne
+    
+    // --- USERS LIST ---
+    async function fetchUsers() {
+        if(!userList) return;
+        try { const r = await fetch(`${API_URL}/api/getutilisateur`); const d = await r.json(); userList.innerHTML = ""; d.users.forEach(u => { const li = document.createElement('li'); let statusClass = u.en_ligne ? "online" : "offline"; let banBtn = ""; if(amIAdmin && u.idutilisateur != myUserId) { banBtn = `<button class="ban-btn" style="background:red; font-size:0.6rem; padding:2px 5px; margin-left:auto;">BAN</button>`; } let nameDisplay = u.is_banned ? `<s style="color:red">${u.nom}</s>` : u.nom; li.innerHTML = `<span class="status-dot ${statusClass}"></span> ${nameDisplay} ${banBtn}`; if(banBtn) { li.querySelector('.ban-btn').onclick = () => banUser(u.idutilisateur, u.nom); } userList.appendChild(li); }); } catch(e){}
+    }
+
+    // --- SCROLL ---
+    let isUserAtBottom = true; if(messagesContainer) { messagesContainer.addEventListener('scroll', () => { const threshold = 100; const position = messagesContainer.scrollTop + messagesContainer.clientHeight; const height = messagesContainer.scrollHeight; if (height - position <= threshold) { isUserAtBottom = true; scrollDownBtn.classList.add('hidden'); } else { isUserAtBottom = false; scrollDownBtn.classList.remove('hidden'); } }); } if(scrollDownBtn) scrollDownBtn.addEventListener('click', () => scrollToBottom(true)); function scrollToBottom(force = false) { if (!messagesContainer) return; if (force) { isUserAtBottom = true; scrollDownBtn.classList.add('hidden'); messagesContainer.scrollTop = messagesContainer.scrollHeight; } else if (isUserAtBottom) { messagesContainer.scrollTop = messagesContainer.scrollHeight; } }
+
+    async function sendMessage() { if(!myToken) return alert("Pas connecté"); const txt = messageInput.value.trim(); const img = currentBase64Image; if (!txt && !img) return; messageInput.value = ""; currentBase64Image = null; imageInput.value = ""; if(previewContainer) previewContainer.style.display='none'; try { const res = await fetch(`${API_URL}/api/messages`, {method:"POST",headers:{"Content-Type":"application/json","Authorization":`Bearer ${myToken}`},body:JSON.stringify({contenu:txt,image:img,idCategorie:currentCategoryId})}); const data = await res.json(); if(res.ok) { if(data.isCheat) { alert(data.message); updateStats(); } else { if(data.xp>0) updateStats(); scrollToBottom(true); fetchMessages(); } } } catch(e) {} }
+
+    // --- MUSIQUE ---
+    const PLAYLIST = [ { title: "Cyberpunk City", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_Sentinel.mp3" }, { title: "Chill Vibes", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3" }, { title: "Retro Gaming", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Rolemusic/The_Pirate_And_The_Dancer/Rolemusic_-_04_-_The_Pirate_And_The_Dancer.mp3" }, { title: "Night Drive", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Elisions.mp3" }, { title: "Teddy un p'tit +", src: "asset/Teddylegénieincompris.mp3" } ];
+    const audioPlayer = new Audio(); let currentTrackIndex = 0; let isPlaying = false; const playPauseBtn = document.getElementById('play-pause'); const nextBtn = document.getElementById('next-track'); const prevBtn = document.getElementById('prev-track'); const trackNameSpan = document.getElementById('track-name'); const musicContainer = document.getElementById('music-player');
+    function loadTrack(index) { if (index < 0) index = PLAYLIST.length - 1; if (index >= PLAYLIST.length) index = 0; currentTrackIndex = index; audioPlayer.src = PLAYLIST[index].src; trackNameSpan.textContent = PLAYLIST[index].title; } function togglePlay() { if (isPlaying) { audioPlayer.pause(); playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>'; trackNameSpan.textContent = "Pause"; musicContainer.classList.remove("playing"); } else { audioPlayer.play().catch(e => console.log(e)); playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>'; trackNameSpan.textContent = PLAYLIST[currentTrackIndex].title; musicContainer.classList.add("playing"); } isPlaying = !isPlaying; } function nextTrack() { currentTrackIndex++; if (currentTrackIndex >= PLAYLIST.length) currentTrackIndex = 0; loadTrack(currentTrackIndex); if(isPlaying) audioPlayer.play(); } function prevTrack() { currentTrackIndex--; if (currentTrackIndex < 0) currentTrackIndex = PLAYLIST.length - 1; loadTrack(currentTrackIndex); if(isPlaying) audioPlayer.play(); } audioPlayer.addEventListener('ended', nextTrack); if(playPauseBtn) { loadTrack(0); playPauseBtn.addEventListener('click', togglePlay); nextBtn.addEventListener('click', nextTrack); prevBtn.addEventListener('click', prevTrack); trackNameSpan.addEventListener('click', nextTrack); trackNameSpan.style.cursor = "pointer"; }
+
     // --- AUTH ---
-    async function handleRegister(e) { e.preventDefault(); if(btnCreer.disabled)return; const nom=nomInput.value.trim(), prenom=prenomInput.value.trim(), password=passInput.value.trim(); if(!nom||!prenom||!password)return alert("Tout remplir"); btnCreer.disabled=true; try{const r=await fetch(`${API_URL}/api/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nom,prenom,password})});if(r.ok)alert("Compte créé");else alert("Erreur");}catch(e){}finally{btnCreer.disabled=false} }
-    async function handleLogin(e) { e.preventDefault(); if(btnConnexion.disabled)return; const nom=nomInput.value.trim(), prenom=prenomInput.value.trim(), password=passInput.value.trim(); btnConnexion.disabled=true; try{const r=await fetch(`${API_URL}/api/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nom,prenom,password})});const d=await r.json();if(r.ok){localStorage.setItem("token",d.token);localStorage.setItem("userId",d.userId);myToken=d.token;myUserId=d.userId;updateUI();fetchMessages();}else alert(d.error);}catch(e){}finally{btnConnexion.disabled=false} }
+    async function handleRegister(e) { e.preventDefault(); if(btnCreer.disabled)return; const nom=nomInput.value.trim(), prenom=prenomInput.value.trim(), password=passInput.value.trim(); if(!nom||!prenom||!password)return alert("Tout remplir"); btnCreer.disabled=true; try{const r=await fetch(`${API_URL}/api/register`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nom,prenom,password})});if(r.ok)alert("Compte créé");else { const d = await r.json(); alert(d.message || "Erreur"); }}catch(e){}finally{btnCreer.disabled=false} }
+    async function handleLogin(e) { e.preventDefault(); if(btnConnexion.disabled)return; const nom=nomInput.value.trim(), prenom=prenomInput.value.trim(), password=passInput.value.trim(); btnConnexion.disabled=true; try { const r=await fetch(`${API_URL}/api/login`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({nom,prenom,password})}); const d=await r.json(); if(r.ok){ localStorage.setItem("token",d.token); localStorage.setItem("userId",d.userId); localStorage.setItem("isAdmin", d.isAdmin); myToken=d.token; myUserId=d.userId; amIAdmin = d.isAdmin === 1; updateUI(); fetchMessages(); } else { if(d.error === "BANNED_IP" || d.error === "BANNED_ACCOUNT") { authContainer.style.display = 'none'; bannedOverlay.classList.remove('hidden'); } else alert(d.message || d.error); } }catch(e){}finally{btnConnexion.disabled=false} }
+
+    // TICKET
+    document.getElementById('send-ticket-btn').addEventListener('click', async () => { const msg = document.getElementById('ticket-msg').value; const pseudo = document.getElementById("nom").value; if(!msg) return alert("Message vide"); await fetch(`${API_URL}/api/ticket`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ message: msg, pseudo: pseudo }) }); alert("Ticket envoyé !"); document.getElementById('ticket-msg').value = ""; });
+    document.getElementById('close-banned').addEventListener('click', () => { window.location.reload(); });
+
+    // BOUTIQUE
+    function renderShop() { if(!shopItemsContainer) return; shopItemsContainer.innerHTML = ''; SHOP_ITEMS.forEach(item => { const div = document.createElement('div'); const isOwned = myInventory.includes(item.icon); const isEquipped = myEquippedBadges.includes(item.icon); div.className = `shop-item ${isOwned ? 'owned' : ''} ${isEquipped ? 'equipped' : ''}`; div.onclick = () => handleShopClick(item); let statusText = `<span class="badge-price">${item.price} <i class="fa-solid fa-coins"></i></span>`; if (isEquipped) statusText = `<span class="status-text equipped">ÉQUIPÉ ✅</span>`; else if (isOwned) statusText = `<span class="status-text owned">ACQUIS</span>`; div.innerHTML = `<span class="badge-icon">${item.icon}</span><span class="badge-name">${item.name}</span>${statusText}`; shopItemsContainer.appendChild(div); }); }
+    async function handleShopClick(item) { const isOwned = myInventory.includes(item.icon); if (!isOwned) { if(!confirm(`Acheter ${item.name} pour ${item.price} pièces ?`)) return; try { const res = await fetch(`${API_URL}/api/shop/buy`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` }, body: JSON.stringify({ badge: item.icon, price: item.price }) }); const data = await res.json(); if(res.ok) { alert(data.message); updateStats(); } else alert(data.error); } catch(e) {} } else { try { const res = await fetch(`${API_URL}/api/shop/equip`, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${myToken}` }, body: JSON.stringify({ badge: item.icon }) }); const data = await res.json(); if(res.ok) updateStats(); else alert(data.error); } catch(e) {} } }
+    async function updateStats() { if(!myToken) return; try { const res = await fetch(`${API_URL}/api/me`, { headers: { "Authorization": `Bearer ${myToken}` } }); const data = await res.json(); if(data) { if(myLevelSpan) myLevelSpan.textContent = data.niveau || 1; let xp = data.xp || 0; let progress = xp % 100; if(xpProgress) xpProgress.style.width = `${progress}%`; if(shopCoinsDisplay) shopCoinsDisplay.textContent = data.coins || 0; myInventory = data.inventory || []; myEquippedBadges = data.active_badges || []; renderShop(); } } catch(e) {} }
 
     if(openShopBtn) openShopBtn.addEventListener('click', () => { updateStats(); shopModal.classList.remove('hidden'); });
     if(closeShopBtn) closeShopBtn.addEventListener('click', () => shopModal.classList.add('hidden'));
@@ -195,94 +169,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if(logoutBtn) logoutBtn.addEventListener('click', ()=>{localStorage.clear();window.location.reload()});
     if(messageInput) messageInput.addEventListener('keypress', e=>{if(e.key==='Enter'){e.preventDefault();sendMessage()}});
     if(categorySelector) categorySelector.addEventListener('change', e=>{currentCategoryId=e.target.value;fetchMessages()});
-
-    async function fetchCategories(){try{const r=await fetch(`${API_URL}/api/categories`);const d=await r.json();if(categorySelector){categorySelector.innerHTML="";d.categories.forEach(c=>{const o=document.createElement("option");o.value=c.idcategorie;o.textContent=c.nom;categorySelector.appendChild(o)});if(currentCategoryId===1&&d.categories.length>0)currentCategoryId=d.categories[0].idcategorie;fetchMessages()}}catch(e){}}
-    async function fetchUsers(){if(!userList)return;try{const r=await fetch(`${API_URL}/api/getutilisateur`);const d=await r.json();userList.innerHTML="";d.users.forEach(u=>{let o=(u.en_ligne===1)||(u.idutilisateur==myUserId);const l=document.createElement('li');l.innerHTML=`<span class="status-dot ${o?"online":"offline"}"></span> ${u.nom}`;userList.appendChild(l)})}catch(e){}}
     if(imageInput) imageInput.addEventListener('change', function(){const f=this.files[0];if(f){const r=new FileReader();r.onload=(e)=>{currentBase64Image=e.target.result;if(previewContainer){previewContainer.style.display='block';fileNameSpan.textContent=f.name}};r.readAsDataURL(f)}});
     if(cancelImgBtn) cancelImgBtn.addEventListener('click', ()=>{currentBase64Image=null;imageInput.value="";previewContainer.style.display='none'});
     
-    document.addEventListener('contextmenu', e=>e.preventDefault());
-    document.addEventListener('keydown', e=>{if(e.key==='F12'||(e.ctrlKey&&e.shiftKey&&e.key==='I'))e.preventDefault()});
-    setInterval(()=>{ (function(){}).constructor("debugger")(); }, 1000);
     setInterval(()=>{ if(myToken){fetchMessages();fetchUsers();updateStats();} }, 2000);
-
-    // Ta liste de lecture ! Ajoute tes liens MP3 ici.
-    // Tu peux trouver des liens sur internet ou héberger tes fichiers.
-    const PLAYLIST = [
-        { title: "Cyberpunk City", src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_Sentinel.mp3" },
-        { title: "Chill Vibes",    src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Tours/Enthusiast/Tours_-_01_-_Enthusiast.mp3" },
-        { title: "Retro Gaming",   src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/Rolemusic/The_Pirate_And_The_Dancer/Rolemusic_-_04_-_The_Pirate_And_The_Dancer.mp3" },
-        { title: "Night Drive",    src: "https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Chad_Crouch/Arps/Chad_Crouch_-_Elisions.mp3" }
-        //ex de ligne que je peux rajouter pour de musique locale libre de droit : { title: "Nom de ta musique", src: "Lien_vers_le_fichier.mp3" },
-    ];
-
-    const audioPlayer = new Audio();
-    let currentTrackIndex = 0;
-    let isPlaying = false;
-
-    // Elements DOM Musique
-    const playPauseBtn = document.getElementById('play-pause');
-    const nextBtn = document.getElementById('next-track');
-    const prevBtn = document.getElementById('prev-track');
-    const trackNameSpan = document.getElementById('track-name');
-    const musicContainer = document.getElementById('music-player');
-
-    // Charger une musique
-    function loadTrack(index) {
-        if (index < 0) index = PLAYLIST.length - 1;
-        if (index >= PLAYLIST.length) index = 0;
-        
-        currentTrackIndex = index;
-        audioPlayer.src = PLAYLIST[index].src;
-        trackNameSpan.textContent = PLAYLIST[index].title;
-    }
-
-    // Play / Pause
-    function togglePlay() {
-        if (isPlaying) {
-            audioPlayer.pause();
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-            trackNameSpan.textContent = "Pause";
-            musicContainer.classList.remove("playing");
-        } else {
-            audioPlayer.play().catch(e => console.log("Erreur lecture:", e));
-            playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-            trackNameSpan.textContent = PLAYLIST[currentTrackIndex].title;
-            musicContainer.classList.add("playing");
-        }
-        isPlaying = !isPlaying;
-    }
-
-    // Suivant
-    function nextTrack() {
-        currentTrackIndex++;
-        if (currentTrackIndex >= PLAYLIST.length) currentTrackIndex = 0;
-        loadTrack(currentTrackIndex);
-        if(isPlaying) audioPlayer.play();
-    }
-
-    // Précédent
-    function prevTrack() {
-        currentTrackIndex--;
-        if (currentTrackIndex < 0) currentTrackIndex = PLAYLIST.length - 1;
-        loadTrack(currentTrackIndex);
-        if(isPlaying) audioPlayer.play();
-    }
-
-    // Auto-Play Suivant quand fini
-    audioPlayer.addEventListener('ended', nextTrack);
-
-    // Initialisation
-    if(playPauseBtn) {
-        loadTrack(0); // Charge la première sans la lancer
-        
-        playPauseBtn.addEventListener('click', togglePlay);
-        nextBtn.addEventListener('click', nextTrack);
-        prevBtn.addEventListener('click', prevTrack);
-        
-        // Petit effet : Si on clique sur le titre, ça change aussi
-        trackNameSpan.addEventListener('click', nextTrack);
-        trackNameSpan.style.cursor = "pointer";
-    }
-
+    function updateUI() { if(myToken) { authContainer.style.display = 'none'; inputContainer.style.display = 'flex'; if(logoutBtn) logoutBtn.style.display = 'flex'; if(levelContainer) levelContainer.style.display = 'flex'; fetchCategories(); fetchUsers(); updateStats(); } else { authContainer.style.display = 'block'; inputContainer.style.display = 'none'; if(logoutBtn) logoutBtn.style.display = 'none'; if(levelContainer) levelContainer.style.display = 'none'; } }
+    updateUI();
 });
