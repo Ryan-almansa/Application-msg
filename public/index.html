@@ -13,7 +13,6 @@
         <header>
             <div class="header-left">
                 <h1><i class="fa-solid fa-comments"></i> Speaky</h1>
-                
                 <div id="music-player">
                     <div class="player-controls">
                         <button id="prev-track" title="Précédent"><i class="fa-solid fa-backward-step"></i></button>
@@ -24,7 +23,7 @@
                         <span id="track-name">Radio Speaky OFF</span>
                     </div>
                 </div>
-                </div>
+            </div>
             
             <div id="level-container" style="display:none;">
                 <div class="level-badge">NIVEAU <span id="my-level">1</span></div>
@@ -34,7 +33,7 @@
             </div>
 
             <div class="header-right">
-                <button id="open-shop-btn" class="icon-btn" title="Boutique & Inventaire">
+                <button id="open-shop-btn" class="icon-btn" title="Boutique">
                     <i class="fa-solid fa-store"></i>
                 </button>
                 <button id="logout-btn" class="icon-btn logout" style="display:none;" title="Déconnexion">
@@ -57,13 +56,12 @@
 
             <div id="chat-container">
                 <div id="messages-container"></div>
-                
                 <button id="scroll-down-btn" class="hidden">
                     <i class="fa-solid fa-arrow-down"></i> Voir les derniers messages
                 </button>
             </div>
         </main>
-        
+
         <div id="input-container" style="display:none;">
             <label for="image-input" id="upload-btn"><i class="fa-solid fa-paperclip"></i></label>
             <input type="file" id="image-input" accept="image/*" style="display: none;">
@@ -108,7 +106,23 @@
                 <div class="loader-dots"><span></span><span></span><span></span></div>
             </div>
         </div>
+
+        <div id="banned-overlay" class="hidden">
+            <div class="banned-content">
+                <i class="fa-solid fa-gavel" style="font-size: 3rem; color: red;"></i>
+                <h2>VOUS ÊTES BANNI</h2>
+                <p>Votre compte ou votre IP a été suspendu par un administrateur.</p>
+                
+                <div class="ticket-form">
+                    <h3>Ouvrir un ticket (Réclamation)</h3>
+                    <textarea id="ticket-msg" placeholder="Expliquez pourquoi on devrait vous débannir..."></textarea>
+                    <button id="send-ticket-btn">Envoyer le ticket</button>
+                </div>
+                <button id="close-banned" style="margin-top:10px; background:#555; padding:5px 15px; border:none; color:white; cursor:pointer;">Fermer</button>
+            </div>
+        </div>
     </div>
+    
     <script src="script.js"></script>
 </body>
 </html>
